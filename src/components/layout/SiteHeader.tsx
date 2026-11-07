@@ -12,7 +12,8 @@ import { MobileTabBar } from "./MobileTabBar";
 export async function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const viewer = await getViewer();
   const nav = [
-    { href: `/${locale}/search`, label: dict.nav.search },
+    { href: `/${locale}/services`, label: dict.market.servicesTitle },
+    { href: `/${locale}/projects`, label: dict.market.projectsTitle },
     { href: `/${locale}/jobs`, label: dict.nav.jobs },
   ];
 
@@ -68,7 +69,8 @@ export async function SiteHeader({ locale, dict }: { locale: Locale; dict: Dicti
         tabs={[
           { href: `/${locale}`, label: dict.nav.home, icon: "home", exact: true },
           { href: `/${locale}/search`, label: dict.nav.search, icon: "search" },
-          { href: `/${locale}/jobs`, label: dict.nav.jobs, icon: "jobs" },
+          { href: `/${locale}/services`, label: dict.market.servicesTitle, icon: "services" },
+          { href: `/${locale}/projects`, label: dict.market.projectsTitle, icon: "jobs" },
           viewer
             ? { href: `/${locale}/dashboard`, label: dict.nav.dashboard, icon: "account" }
             : { href: `/${locale}/sign-in`, label: dict.nav.signIn, icon: "account" },

@@ -36,11 +36,27 @@ test.describe("localization", () => {
   });
 });
 
+test.describe("marketplace browse", () => {
+  test("services and projects pages render with filters", async ({ page }) => {
+    await page.goto("/en/services?category=design&city=atlantis&max=abc");
+    await expect(page.getByRole("heading", { level: 1, name: "Services" })).toBeVisible();
+    await expect(page.getByLabel("Category")).toHaveValue("design");
+    await expect(page.getByLabel("City")).toHaveValue("");
+    await page.goto("/en/projects");
+    await expect(page.getByRole("heading", { level: 1, name: "Projects" })).toBeVisible();
+  });
+  test("unknown ids and usernames return 404", async ({ page }) => {
+    expect((await page.goto("/en/services/00000000-0000-0000-0000-000000000000"))?.status()).toBe(404);
+    expect((await page.goto("/en/projects/not-a-uuid"))?.status()).toBe(404);
+    expect((await page.goto("/en/u/nobody.here"))?.status()).toBe(404);
+  });
+});
+
 test.describe("access control", () => {
-  for (const path of ["dashboard", "settings", "onboarding", "admin"]) {
+  for (const path of ["dashboard", "settings", "onboarding", "admin", "dashboard/services/new", "dashboard/projects"]) {
     test(`/${path} requires sign-in`, async ({ page }) => {
       await page.goto(`/en/${path}`);
-      await expect(page).toHaveURL(new RegExp(`/en/sign-in\\?next=%2Fen%2F${path}`));
+      await expect(page).toHaveURL(new RegExp(`/en/sign-in\\?next=%2Fen%2F${path.replaceAll("/", "%2F")}`));
     });
   }
 
@@ -63,7 +79,8 @@ test.describe("search", () => {
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page).toHaveURL(/\/en\/search\?q=logo&city=duhok$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("“logo” in Duhok");
-    await expect(page.getByRole("heading", { name: "Freelance services" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Services/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Projects/ })).toBeVisible();
   });
 
   test("city picker closes with Escape and shows an empty state", async ({ page }) => {
@@ -116,7 +133,7 @@ test.describe("forms", () => {
 });
 
 test.describe("layout", () => {
-  for (const path of ["/en", "/ckb", "/kmr", "/ar", "/en/sign-up", "/ar/jobs", "/kmr/search?q=logo&city=duhok"]) {
+  for (const path of ["/en", "/ckb", "/kmr", "/ar", "/en/sign-up", "/ar/jobs", "/kmr/search?q=logo&city=duhok", "/kmr/services", "/ar/projects"]) {
     test(`no horizontal overflow on ${path}`, async ({ page }) => {
       await page.goto(path);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -126,7 +143,7 @@ test.describe("layout", () => {
 });
 
 test.describe("accessibility (axe, WCAG 2.1 AA)", () => {
-  for (const path of ["/en", "/ckb", "/ar/sign-in", "/en/sign-up", "/kmr/forgot-password", "/en/jobs", "/ar/search?q=logo&city=erbil"]) {
+  for (const path of ["/en", "/ckb", "/ar/sign-in", "/en/sign-up", "/kmr/forgot-password", "/en/jobs", "/ar/search?q=logo&city=erbil", "/en/services", "/ckb/projects"]) {
     test(`no serious violations on ${path}`, async ({ page }) => {
       await page.goto(path);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { locales } from "@/i18n/config";
-import { currencies } from "@/lib/currency";
+import { currencies, toMinorUnits } from "@/lib/currency";
+import { AVAILABILITY, BUDGET_TYPES, CATEGORY_KEYS, ENTRY_KINDS, EXPERIENCE_LEVELS, LANG_KEYS, TIERS, TIMELINES } from "@/lib/taxonomy";
 import type { MessageKey } from "@/i18n/translate";
 
 /**
@@ -111,3 +112,150 @@ export function safeRedirectPath(next: unknown, fallback: string): string {
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || /[\r\n]/.test(next)) return fallback;
   return next;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Marketplace (Phase 6)
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Arabic-Indic (٠-٩) and Persian (۰-۹) digits → Western, thousands separators removed. */
+export function normalizeDigits(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[,٬،\s]/g, "")
+    .replace(/٫/g, ".");
+}
+
+/** "Logo, Branding، Figma" → ["Logo", "Branding", "Figma"] (comma, Arabic comma or new line). */
+export function splitList(value: unknown, max: number, maxLen: number): string[] {
+  if (typeof value !== "string") return [];
+  return [...new Set(value.split(/[,،\n]/).map((s) => s.trim()).filter(Boolean))].slice(0, max).map((s) => s.slice(0, maxLen));
+}
+
+const optionalText = (max: number) =>
+  z.string().trim().max(max, msg("validation.tooLong")).optional().transform((v) => (v ? v : null));
+
+const optionalUrl = z
+  .string()
+  .trim()
+  .max(300, msg("validation.tooLong"))
+  .optional()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || /^https?:\/\/\S+$/.test(v), msg("validation.url"));
+
+/** Major-unit IQD amount typed by a person → integer minor units. */
+export const iqdAmount = z
+  .string()
+  .transform((v) => normalizeDigits(v))
+  .refine((v) => /^\d{1,12}$/.test(v), msg("validation.amount"))
+  .transform((v) => toMinorUnits(Number(v), "IQD"))
+  .refine((v) => v > 0, msg("validation.amount"));
+
+const optionalIqd = z
+  .string()
+  .optional()
+  .transform((v) => (v ? normalizeDigits(v) : ""))
+  .refine((v) => v === "" || /^\d{1,12}$/.test(v), msg("validation.amount"))
+  .transform((v) => (v === "" ? null : toMinorUnits(Number(v), "IQD")));
+
+const intIn = (min: number, max: number) =>
+  z
+    .string()
+    .transform((v) => normalizeDigits(v))
+    .refine((v) => /^\d+$/.test(v) && Number(v) >= min && Number(v) <= max, msg("validation.number"))
+    .transform(Number);
+
+const optionalYear = z
+  .string()
+  .optional()
+  .transform((v) => (v ? normalizeDigits(v) : ""))
+  .refine((v) => v === "" || (/^\d{4}$/.test(v) && Number(v) >= 1950 && Number(v) <= 2100), msg("validation.year"))
+  .transform((v) => (v === "" ? null : Number(v)));
+
+const cityOrNull = z.enum([...CITY_KEYS, "other"]).optional().or(z.literal("").transform(() => undefined)).transform((v) => v ?? null);
+
+export const profileDetailsSchema = z.object({
+  skills: z.string().optional().transform((v) => splitList(v, 15, 40)),
+  languages: z.array(z.enum(LANG_KEYS)).max(6),
+  availability: z.enum(AVAILABILITY),
+  rate: optionalIqd,
+  websiteUrl: optionalUrl,
+});
+
+export const entrySchema = z
+  .object({
+    kind: z.enum(ENTRY_KINDS),
+    title: trimmed.min(2, msg("validation.tooShort")).max(120, msg("validation.tooLong")),
+    organization: optionalText(120),
+    startYear: optionalYear,
+    endYear: optionalYear,
+    description: optionalText(1000),
+  })
+  .refine((v) => v.endYear === null || v.startYear === null || v.endYear >= v.startYear, { ...msg("validation.years"), path: ["endYear"] });
+
+export const portfolioSchema = z.object({
+  title: trimmed.min(2, msg("validation.tooShort")).max(120, msg("validation.tooLong")),
+  description: optionalText(2000),
+  linkUrl: optionalUrl,
+  skills: z.string().optional().transform((v) => splitList(v, 10, 40)),
+  outcome: optionalText(300),
+});
+
+export const serviceSchema = z.object({
+  title: trimmed.min(10, msg("validation.tooShort")).max(100, msg("validation.tooLong")),
+  category: z.enum(CATEGORY_KEYS, msg("validation.required")),
+  description: trimmed.max(5000, msg("validation.tooLong")),
+  requirements: optionalText(2000),
+  city: cityOrNull,
+  languages: z.array(z.enum(LANG_KEYS)).max(6),
+});
+
+export const packageSchema = z.object({
+  tier: z.enum(TIERS),
+  title: trimmed.min(2, msg("validation.tooShort")).max(60, msg("validation.tooLong")),
+  description: optionalText(500),
+  price: iqdAmount,
+  deliveryDays: intIn(1, 120),
+  revisions: intIn(0, 20),
+  deliverables: z.string().optional().transform((v) => splitList(v, 10, 120)),
+});
+
+export const faqSchema = z
+  .array(z.object({ q: trimmed.max(200), a: trimmed.max(1000) }))
+  .transform((items) => items.filter((f) => f.q && f.a).slice(0, 10));
+
+export const requestSchema = z.object({
+  serviceId: z.uuid(),
+  tier: z.enum(TIERS),
+  message: trimmed.min(20, msg("validation.tooShort")).max(2000, msg("validation.tooLong")),
+});
+
+export const projectSchema = z
+  .object({
+    title: trimmed.min(10, msg("validation.tooShort")).max(120, msg("validation.tooLong")),
+    description: trimmed.min(30, msg("validation.tooShort")).max(5000, msg("validation.tooLong")),
+    category: z.enum(CATEGORY_KEYS, msg("validation.required")),
+    skills: z.string().optional().transform((v) => splitList(v, 10, 40)),
+    budgetType: z.enum(BUDGET_TYPES),
+    budgetMin: optionalIqd,
+    budgetMax: optionalIqd,
+    timeline: z.enum(TIMELINES),
+    experienceLevel: z.enum(EXPERIENCE_LEVELS),
+    city: cityOrNull,
+    visibility: z.enum(["public", "members"]),
+  })
+  .refine((v) => v.budgetMin === null || v.budgetMax === null || v.budgetMax >= v.budgetMin, {
+    ...msg("validation.budgetRange"),
+    path: ["budgetMax"],
+  });
+
+export const proposalSchema = z.object({
+  projectId: z.uuid(),
+  coverLetter: trimmed.min(50, msg("validation.tooShort")).max(5000, msg("validation.tooLong")),
+  bid: iqdAmount,
+  timelineDays: intIn(1, 365),
+  portfolioItemIds: z.array(z.uuid()).max(5),
+  answers: optionalText(2000),
+});
+
+export const MEDIA_MAX_BYTES = 5 * 1024 * 1024;

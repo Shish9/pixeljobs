@@ -4,8 +4,8 @@
 | --- | --- | --- |
 | 1–4 | Audit, assessment, plan, approval | ✅ |
 | 5 | Design system, i18n/RTL, auth, roles, schema + RLS, settings, CI | ✅ |
-| 6 | Freelancer profiles (skills, languages, experience, portfolio), public profile pages, services with Basic/Standard/Premium packages, service requests, client projects, proposals pipeline, saved items | next |
-| 7 | Contextual messaging, engagements, two-sided reviews + rating aggregates, reports, moderation queues/actions, account suspension, terms/privacy/guidelines/safety pages | |
+| 6 | Freelancer profiles (skills, languages, experience, portfolio), public profile pages, services with Basic/Standard/Premium packages, service requests, client projects, proposals pipeline, saved items | ✅ |
+| 7 | Contextual messaging, engagements, two-sided reviews + rating aggregates, reports, moderation queues/actions, account suspension, terms/privacy/guidelines/safety pages | next |
 | 8 | Accessibility audit, performance (static shells, caching, image optimisation), CSP, rate limiting/CAPTCHA, load tests | |
 | 9 | Deployment (Vercel + domain + SMTP), monitoring, backups, docs handoff | |
 

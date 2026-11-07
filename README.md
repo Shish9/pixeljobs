@@ -3,9 +3,10 @@
 A local-first freelance marketplace for Kurdistan and Iraq — fixed-price services, client projects and
 proposals, in **English, Arabic, Sorani (ckb) and Badini (kmr)** with full right-to-left support.
 
-> Status: **Phase 5 (foundation) complete + design refresh.** Accounts, quick onboarding, roles, settings (incl.
-> digit style), localization, the "second look" design system, search with city picker, mobile tab bar, database
-> security and the legacy job board are live. Services, projects, proposals, messaging, reviews and
+> Status: **Phase 6 (marketplace core) complete.** Freelancer profiles and portfolios, fixed-price services with
+> Basic/Standard/Premium packages, service requests, client projects with a full lifecycle, proposals with
+> shortlist/accept, saved items, and search across all of it — in four languages. Messaging, reviews and moderation
+> tools are Phase 7. PixelJobs does **not** process payments. Services, projects, proposals, messaging, reviews and
 > moderation tools arrive in Phases 6–7. PixelJobs does **not** process payments.
 
 ## Stack

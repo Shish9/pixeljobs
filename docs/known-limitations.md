@@ -3,10 +3,15 @@
 - **Domain:** `pixeljobs.co` serves a registrar parking page; ownership must be confirmed.
 - **Email delivery:** custom SMTP is not configured in Supabase yet → real users won't receive confirmation or reset
   emails. Blocking for public launch.
-- **Marketplace features** (services, projects, proposals, messaging, reviews, reports, moderation actions) are not
-  built yet; the dashboard's "Coming next" list says so explicitly.
-- **Search** currently searches the read-only job board and says plainly that freelancer services open in the next
-  update. It will search services and projects once Phase 6 lands.
+- **Not built yet (Phase 7):** messaging, two-sided reviews and ratings, reports, moderation queues and staff actions
+  (e.g. suspending a service or project — the database already reserves those statuses), legal/safety pages.
+- **Project attachments** are not supported yet (need private storage with signed links and a malware-scanning
+  decision). Clients describe work in text for now.
+- **Search** uses Postgres `simple` full-text search over titles and descriptions; there is no ranking, fuzzy matching
+  or Kurdish/Arabic stemming yet.
+- **Account deletion:** a service with request history cannot be deleted (history is kept on purpose), so deleting a
+  freelancer's account needs those requests removed first. A proper account-deletion flow is planned.
+- **Ratings/response time** are not shown on cards because there is no review data yet — nothing is invented.
 - **Not yet built from the UX review:** guided request form and trust details on service pages (need Phase 6),
   phone-number sign-in (needs an SMS provider — a cost decision), WhatsApp/SMS notifications, real photography.
 - **No payments.** Nothing in the app processes money or implies escrow/guarantees.

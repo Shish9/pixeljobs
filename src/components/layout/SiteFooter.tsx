@@ -14,7 +14,8 @@ export function SiteFooter({ locale, dict }: { locale: Locale; dict: Dictionary 
           <p className="text-sm text-ink-subtle">{dict.footer.paymentsNote}</p>
         </div>
         <ul className="space-y-2">
-          <li><Link className="hover:underline" href={`/${locale}/search`}>{dict.nav.search}</Link></li>
+          <li><Link className="hover:underline" href={`/${locale}/services`}>{dict.market.servicesTitle}</Link></li>
+          <li><Link className="hover:underline" href={`/${locale}/projects`}>{dict.market.projectsTitle}</Link></li>
           <li><Link className="hover:underline" href={`/${locale}/jobs`}>{dict.nav.jobs}</Link></li>
           <li><Link className="hover:underline" href={`/${locale}/sign-up`}>{dict.nav.join}</Link></li>
         </ul>

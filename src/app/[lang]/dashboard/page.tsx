@@ -7,6 +7,9 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { getFormatters } from "@/i18n/format-server";
 import { interpolate } from "@/i18n/translate";
 import { requireOnboardedViewer } from "@/lib/auth";
+import { dashboardCounts } from "@/lib/market";
+import { ButtonLink } from "@/components/ui/Button";
+import { DashboardNav } from "@/components/market/parts";
 import { Alert } from "@/components/ui/Alert";
 import { Container, ProgressBar } from "@/components/ui/Card";
 
@@ -20,7 +23,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const viewer = await requireOnboardedViewer(lang, `/${lang}/dashboard`);
-  const [dict, fmt] = await Promise.all([getDictionary(lang), getFormatters(lang)]);
+  const [dict, fmt, counts] = await Promise.all([getDictionary(lang), getFormatters(lang), dashboardCounts(viewer.user.id)]);
+  const m = dict.market;
   const d = dict.dashboard;
   const sp = await searchParams;
   const p = viewer.profile;
@@ -42,17 +46,30 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
     { label: d.stepCity, done: Boolean(p.city), href: settings },
   ];
   const done = steps.filter((s) => s.done).length;
-  const upcoming =
+  const base = `/${lang}/dashboard`;
+  const stats =
     mode === "freelancer"
-      ? [d.sectionServices, d.sectionProposals, d.sectionRequests, d.sectionMessages, d.sectionPortfolio, d.sectionReviews]
-      : [d.sectionProjects, d.sectionProposals, d.sectionRequests, d.sectionMessages, d.sectionSaved, d.sectionReviews];
+      ? [
+          { label: m.statServices, value: counts.services, href: `${base}/services` },
+          { label: m.statRequests, value: counts.requests, href: `${base}/requests` },
+          { label: m.statProposals, value: counts.proposals, href: `${base}/proposals` },
+        ]
+      : [
+          { label: m.statProjects, value: counts.projects, href: `${base}/projects` },
+          { label: m.statRequests, value: counts.requests, href: `${base}/requests?side=sent` },
+        ];
+  const actions =
+    mode === "freelancer"
+      ? [{ href: `${base}/services/new`, label: m.newService }, { href: `/${lang}/projects`, label: m.browseProjects }]
+      : [{ href: `${base}/projects/new`, label: m.newProject }, { href: `/${lang}/services`, label: m.browseServices }];
 
   const tabCls = (active: boolean) =>
     `inline-flex min-h-11 items-center border-b-[3px] px-1 text-base ${active ? "border-brand-600 font-bold text-ink" : "border-transparent text-ink-subtle hover:text-ink"}`;
 
   return (
-    <Container className="py-10 sm:py-14">
-      <div className="flex flex-col gap-4 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <Container className="py-8 sm:py-12">
+      <DashboardNav locale={lang} dict={dict} current="" isFreelancer={p.is_freelancer} isClient={p.is_client} />
+      <div className="mt-8 flex flex-col gap-4 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="text-h1 font-extrabold tracking-tight rtl:tracking-normal">
           {interpolate(d.welcome, { name: p.display_name || (p.username ? `@${p.username}` : "") }).replace(/[,،]\s*$/, "")}
         </h1>
@@ -115,17 +132,23 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
           )}
         </section>
 
-        <section aria-labelledby="coming">
-          <h2 id="coming" className="text-xl font-extrabold">{d.comingTitle}</h2>
-          <p className="mt-2 text-ink-muted">{mode === "freelancer" ? d.comingFreelancer : d.comingClient}</p>
-          <ul className="mt-4 border-t border-ink">
-            {upcoming.map((label) => (
-              <li key={label} className="flex min-h-12 items-center justify-between border-b border-line text-ink-muted">
-                <span>{label}</span>
-                <span className="text-xs font-semibold text-ink-subtle">{dict.common.comingSoon}</span>
-              </li>
+        <section aria-labelledby="work">
+          <h2 id="work" className="text-xl font-extrabold">{mode === "freelancer" ? m.workTitle : m.hireTitle}</h2>
+          <dl className="mt-4 grid grid-cols-2 border-t border-ink sm:grid-cols-3">
+            {stats.map((st) => (
+              <div key={st.label} className="border-b border-line py-4 pe-4">
+                <dt className="text-sm text-ink-subtle">{st.label}</dt>
+                <dd className="mt-1 text-3xl font-extrabold">
+                  <Link href={st.href} className="hover:text-brand-600">{fmt.number(st.value)}</Link>
+                </dd>
+              </div>
             ))}
-          </ul>
+          </dl>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {actions.map((a, i) => (
+              <ButtonLink key={a.href} href={a.href} variant={i === 0 ? "dark" : "secondary"}>{a.label}</ButtonLink>
+            ))}
+          </div>
         </section>
       </div>
     </Container>

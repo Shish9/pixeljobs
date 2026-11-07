@@ -19,8 +19,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
-    // Avatar uploads go through a server action (2 MB file limit + multipart overhead).
-    serverActions: { bodySizeLimit: "3mb" },
+    // Image uploads go through server actions (5 MB media limit + multipart overhead).
+    serverActions: { bodySizeLimit: "6mb" },
   },
   images: {
     remotePatterns: supabaseHost

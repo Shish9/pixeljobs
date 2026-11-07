@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, Home, Search, UserRound } from "lucide-react";
+import { Briefcase, Home, Package, Search, UserRound } from "lucide-react";
 
-type Tab = { href: string; label: string; icon: "home" | "search" | "jobs" | "account"; exact?: boolean };
-const ICONS = { home: Home, search: Search, jobs: Briefcase, account: UserRound } as const;
+type Tab = { href: string; label: string; icon: "home" | "search" | "services" | "jobs" | "account"; exact?: boolean };
+const ICONS = { home: Home, search: Search, services: Package, jobs: Briefcase, account: UserRound } as const;
 
 /** Bottom navigation on phones: the main destinations stay within thumb reach. */
 export function MobileTabBar({ label, tabs }: { label: string; tabs: Tab[] }) {
@@ -14,7 +14,7 @@ export function MobileTabBar({ label, tabs }: { label: string; tabs: Tab[] }) {
       aria-label={label}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-ink bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
         {tabs.map((t) => {
           const Icon = ICONS[t.icon];
           const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
@@ -23,7 +23,7 @@ export function MobileTabBar({ label, tabs }: { label: string; tabs: Tab[] }) {
               <Link
                 href={t.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-16 flex-col items-center justify-center gap-1 border-t-[3px] text-xs ${
+                className={`flex min-h-16 flex-col items-center justify-center gap-1 border-t-[3px] px-0.5 text-center text-[0.7rem] leading-tight ${
                   active ? "border-brand-600 font-bold text-ink" : "border-transparent text-ink-subtle"
                 }`}
               >

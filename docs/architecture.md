@@ -7,7 +7,11 @@ src/
     [lang]/                   Every page lives under a locale segment (en | ar | ckb | kmr)
       layout.tsx              <html lang dir>, fonts, header/footer
       (auth)/                 sign-in, sign-up, forgot-password, reset-password + server actions
-      onboarding/ dashboard/ settings/ admin/ jobs/ search/
+      onboarding/ settings/ admin/ jobs/ search/
+      services/ services/[id]     Browse + detail (packages, FAQs, request form, save)
+      projects/ projects/[id]     Browse + detail (proposal form)
+      u/[username]                Public freelancer profile
+      dashboard/                  Overview + profile, portfolio, services(/new,/[id]), requests, projects(/new,/[id]), proposals, saved
       account-actions.ts      Server actions for onboarding/profile/preferences/privacy/avatar
     auth/callback|confirm/    Email link handlers (PKCE code / token-hash)
   components/ui               Design-system primitives (Button, Field, Alert, Card…)
@@ -16,6 +20,10 @@ src/
   components/account          Client forms for onboarding + settings
   i18n/                       Locale registry, dictionaries, translate(), Intl formatting
   lib/                        auth (getViewer/require*), validation (zod), supabase clients, currency, jobs
+  lib/market.ts               Marketplace reads — batched related queries (no per-row N+1), RLS-scoped
+  lib/actions/market.ts       Marketplace server actions; echo submitted values so forms never lose input
+  lib/taxonomy.ts             Categories, languages, tiers, timelines, status transitions (mirror DB triggers)
+  components/market           Cards, rows, status badges, save/status buttons, dashboard shell, client forms
 supabase/
   migrations/                 SQL migrations (applied in order, file names = applied versions)
   rollbacks/                  Manual down-migrations (review before use)
