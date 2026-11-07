@@ -3,6 +3,7 @@ import {
   fieldErrors,
   onboardingSchema,
   passwordSchema,
+  profileSchema,
   resetPasswordSchema,
   safeRedirectPath,
   signUpSchema,
@@ -51,12 +52,20 @@ describe("usernames and onboarding", () => {
     expect(usernameSchema.safeParse("admin").success).toBe(false);
   });
 
-  it("needs at least one marketplace mode", () => {
-    const base = { username: "aram", preferredLocale: "ckb", city: "" };
-    expect(onboardingSchema.safeParse({ ...base, isClient: null, isFreelancer: null }).success).toBe(false);
-    const ok = onboardingSchema.safeParse({ ...base, isClient: "on", isFreelancer: null, city: "erbil" });
+  it("needs at least one marketplace mode, and nothing else", () => {
+    expect(onboardingSchema.safeParse({ isClient: null, isFreelancer: null, city: "" }).success).toBe(false);
+    const ok = onboardingSchema.safeParse({ isClient: "on", isFreelancer: null, city: "erbil" });
     expect(ok.success && ok.data).toMatchObject({ isClient: true, isFreelancer: false, city: "erbil" });
-    expect(onboardingSchema.safeParse({ ...base, isClient: "on", preferredLocale: "fr" }).success).toBe(false);
+    expect(onboardingSchema.safeParse({ isFreelancer: "on", city: "" }).success).toBe(true);
+    expect(onboardingSchema.safeParse({ isFreelancer: "on", city: "atlantis" }).success).toBe(false);
+  });
+
+  it("treats the settings username as optional but validated", () => {
+    const base = { displayName: "Aram", headline: "", bio: "", city: "" };
+    expect(profileSchema.safeParse({ ...base, username: "" }).success).toBe(true);
+    expect(profileSchema.safeParse({ ...base, username: "aram.k" }).success).toBe(true);
+    expect(profileSchema.safeParse({ ...base, username: "a" }).success).toBe(false);
+    expect(profileSchema.safeParse({ ...base, username: "admin" }).success).toBe(false);
   });
 });
 

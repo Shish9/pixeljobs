@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { AuthError } from "@supabase/supabase-js";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { DIGIT_COOKIE, isDigitStyle } from "@/i18n/format";
 import type { ActionState } from "@/lib/action-state";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/supabase/env";
@@ -51,8 +53,14 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
 
   const supabase = await createClient();
   if (!supabase) return notConfigured;
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { status: "error", message: authErrorKey(error), values };
+
+  // Carry the saved digit preference (١٢٣ / 123) to this device.
+  const { data: settings } = await supabase.from("account_settings").select("digit_style").eq("user_id", data.user.id).maybeSingle();
+  if (isDigitStyle(settings?.digit_style)) {
+    (await cookies()).set(DIGIT_COOKIE, settings.digit_style, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  }
 
   redirect(safeRedirectPath(formData.get("next"), `/${locale}/dashboard`));
 }

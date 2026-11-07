@@ -38,7 +38,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
   const m = pickAccountMessages(dict);
   const sp = await searchParams;
   const supabase = await createClient();
-  const { data: settings } = (await supabase?.from("account_settings").select("marketing_emails").eq("user_id", viewer.user.id).single()) ?? { data: null };
+  const { data: settings } = (await supabase?.from("account_settings").select("marketing_emails, digit_style").eq("user_id", viewer.user.id).single()) ?? { data: null };
   const p = viewer.profile;
 
   return (
@@ -50,7 +50,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
         <Section id="profile" title={dict.settings.profileSection} description={dict.settings.profileHelp}>
           <div className="space-y-8">
             <AvatarForm locale={lang} m={m} current={avatarUrl(p.avatar_path)} />
-            <ProfileForm locale={lang} m={m} defaults={{ displayName: p.display_name, headline: p.headline, bio: p.bio, city: p.city }} />
+            <ProfileForm locale={lang} m={m} defaults={{ displayName: p.display_name, username: p.username, headline: p.headline, bio: p.bio, city: p.city }} />
           </div>
         </Section>
 
@@ -58,7 +58,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
           <PreferencesForm
             locale={lang}
             m={m}
-            defaults={{ preferredLocale: p.preferred_locale, preferredCurrency: p.preferred_currency, isClient: p.is_client, isFreelancer: p.is_freelancer }}
+            defaults={{ preferredLocale: p.preferred_locale, preferredCurrency: p.preferred_currency, digitStyle: settings?.digit_style ?? "native", isClient: p.is_client, isFreelancer: p.is_freelancer }}
           />
         </Section>
 
@@ -74,7 +74,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
             </div>
             <div>
               <dt className="font-semibold">{dict.onboarding.username}</dt>
-              <dd className="ltr-isolate mt-0.5 text-ink-muted">@{p.username}</dd>
+              <dd className="ltr-isolate mt-0.5 text-ink-muted">{p.username ? `@${p.username}` : "—"}</dd>
             </div>
             <div>
               <dt className="font-semibold">{dict.settings.securitySection}</dt>

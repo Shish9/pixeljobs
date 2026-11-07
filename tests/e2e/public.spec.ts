@@ -50,6 +50,50 @@ test.describe("access control", () => {
   });
 });
 
+test.describe("search", () => {
+  test("city picker works with the keyboard and the search submits", async ({ page }) => {
+    await page.goto("/en");
+    await page.getByRole("button", { name: /any city/ }).click();
+    const filter = page.getByRole("combobox", { name: "Find a city" });
+    await expect(filter).toBeFocused();
+    await filter.fill("duh");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("button", { name: /Duhok/ })).toBeFocused();
+    await page.getByLabel("I need").fill("logo");
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page).toHaveURL(/\/en\/search\?q=logo&city=duhok$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("“logo” in Duhok");
+    await expect(page.getByRole("heading", { name: "Freelance services" })).toBeVisible();
+  });
+
+  test("city picker closes with Escape and shows an empty state", async ({ page }) => {
+    await page.goto("/en");
+    await page.getByRole("button", { name: /any city/ }).click();
+    await page.getByRole("combobox", { name: "Find a city" }).fill("zzz");
+    await expect(page.getByText("No city matches “zzz”.")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("combobox", { name: "Find a city" })).toHaveCount(0);
+  });
+
+  test("unknown city values fall back to any city", async ({ page }) => {
+    await page.goto("/en/search?city=atlantis");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Freelancers and jobs: any city");
+  });
+
+  test("mobile tab bar shows on phones only", async ({ page, isMobile }) => {
+    await page.goto("/ckb");
+    const tabs = page.locator("nav.fixed");
+    if (isMobile) {
+      await expect(tabs).toBeVisible();
+      await tabs.getByRole("link", { name: "گەڕان" }).click();
+      await expect(page).toHaveURL(/\/ckb\/search$/);
+      await expect(tabs.getByRole("link", { name: "گەڕان" })).toHaveAttribute("aria-current", "page");
+    } else {
+      await expect(tabs).toBeHidden();
+    }
+  });
+});
+
 test.describe("forms", () => {
   test("sign-up validates on the server and shows localized errors", async ({ page }) => {
     await page.goto("/ckb/sign-up");
@@ -72,7 +116,7 @@ test.describe("forms", () => {
 });
 
 test.describe("layout", () => {
-  for (const path of ["/en", "/ckb", "/en/sign-up", "/ar/jobs"]) {
+  for (const path of ["/en", "/ckb", "/kmr", "/ar", "/en/sign-up", "/ar/jobs", "/kmr/search?q=logo&city=duhok"]) {
     test(`no horizontal overflow on ${path}`, async ({ page }) => {
       await page.goto(path);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -82,7 +126,7 @@ test.describe("layout", () => {
 });
 
 test.describe("accessibility (axe, WCAG 2.1 AA)", () => {
-  for (const path of ["/en", "/ckb", "/ar/sign-in", "/en/sign-up", "/kmr/forgot-password", "/en/jobs"]) {
+  for (const path of ["/en", "/ckb", "/ar/sign-in", "/en/sign-up", "/kmr/forgot-password", "/en/jobs", "/ar/search?q=logo&city=erbil"]) {
     test(`no serious violations on ${path}`, async ({ page }) => {
       await page.goto(path);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

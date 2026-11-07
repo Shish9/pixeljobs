@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MapPin } from "lucide-react";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
-import { formatDate, formatNumber } from "@/i18n/format";
+import { getFormatters } from "@/i18n/format-server";
 import { interpolate } from "@/i18n/translate";
 import { listJobs } from "@/lib/jobs";
 import { Alert } from "@/components/ui/Alert";
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/jobs">): P
 export default async function JobsPage({ params }: PageProps<"/[lang]/jobs">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const [dict, jobs] = await Promise.all([getDictionary(lang), listJobs()]);
+  const [dict, jobs, fmt] = await Promise.all([getDictionary(lang), listJobs(), getFormatters(lang)]);
 
   return (
     <Container className="max-w-4xl py-10 sm:py-14">
@@ -31,7 +31,7 @@ export default async function JobsPage({ params }: PageProps<"/[lang]/jobs">) {
       <Alert className="mt-6">{dict.jobs.archiveNote}</Alert>
 
       <p className="mt-8 text-sm text-ink-subtle" aria-live="polite">
-        {interpolate(dict.jobs.results, { count: formatNumber(jobs.length, lang) })}
+        {interpolate(dict.jobs.results, { count: fmt.number(jobs.length) })}
       </p>
       {jobs.length === 0 ? (
         <div className="mt-4"><EmptyState title={dict.jobs.empty} /></div>
@@ -48,7 +48,7 @@ export default async function JobsPage({ params }: PageProps<"/[lang]/jobs">) {
                     <Badge>{job.job_type}</Badge>
                     <Badge tone="success">{job.remote_policy}</Badge>
                     {job.location && <span className="inline-flex items-center gap-1 text-ink-subtle"><MapPin className="size-3.5" aria-hidden="true" />{job.location}</span>}
-                    <span className="ms-auto text-ink-subtle">{interpolate(dict.jobs.posted, { date: formatDate(job.published_date, lang) })}</span>
+                    <span className="ms-auto text-ink-subtle">{interpolate(dict.jobs.posted, { date: fmt.date(job.published_date) })}</span>
                   </div>
                 </Link>
               </Card>

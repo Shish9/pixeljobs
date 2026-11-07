@@ -62,7 +62,7 @@ function LocaleSelect({ id, defaultValue }: { id: string; defaultValue: string }
 export function OnboardingForm({ locale, m, defaults }: {
   locale: string;
   m: AccountMessages;
-  defaults: { username: string; city: string | null; isClient: boolean; isFreelancer: boolean };
+  defaults: { city: string | null; isClient: boolean; isFreelancer: boolean };
 }) {
   const [state, action] = useActionState(completeOnboardingAction, idleState);
   const t = useT(m);
@@ -83,19 +83,10 @@ export function OnboardingForm({ locale, m, defaults }: {
 
       <fieldset className="space-y-5">
         <legend className="text-base font-bold">{m.onboarding.stepBasics}</legend>
-        <Field id="username" label={m.onboarding.username} hint={m.onboarding.usernameHint} error={t(fe.username)}>
-          {(d, invalid) => (
-            <Input id="username" name="username" dir="ltr" autoComplete="username" required minLength={3} maxLength={30}
-              pattern="[a-z0-9][a-z0-9._]{1,28}[a-z0-9]" defaultValue={state.values?.username ?? defaults.username}
-              aria-describedby={d} aria-invalid={invalid} />
-          )}
-        </Field>
         <Field id="city" label={m.onboarding.city} optionalLabel={m.common.optional} error={t(fe.city)}>
           {(d, invalid) => <CitySelect m={m} defaultValue={state.values?.city ?? defaults.city} describedBy={d} invalid={invalid} />}
         </Field>
-        <Field id="preferredLocale" label={m.onboarding.preferredLanguage}>
-          {() => <LocaleSelect id="preferredLocale" defaultValue={locale} />}
-        </Field>
+        <p className="text-sm text-ink-subtle">{m.onboarding.laterNote}</p>
       </fieldset>
 
       <SubmitButton size="lg" className="w-full sm:w-auto" pendingLabel={m.common.saving}>{m.onboarding.finish}</SubmitButton>
@@ -103,7 +94,7 @@ export function OnboardingForm({ locale, m, defaults }: {
   );
 }
 
-type ProfileDefaults = { displayName: string; headline: string | null; bio: string | null; city: string | null };
+type ProfileDefaults = { displayName: string; username: string | null; headline: string | null; bio: string | null; city: string | null };
 
 export function ProfileForm({ locale, m, defaults }: { locale: string; m: AccountMessages; defaults: ProfileDefaults }) {
   const [state, action] = useActionState(updateProfileAction, idleState);
@@ -115,6 +106,12 @@ export function ProfileForm({ locale, m, defaults }: { locale: string; m: Accoun
       <Status state={state} m={m} />
       <Field id="displayName" label={m.auth.displayName} error={t(fe.displayName, { max: 80 })}>
         {(d, invalid) => <Input id="displayName" name="displayName" autoComplete="name" required maxLength={80} defaultValue={defaults.displayName} aria-describedby={d} aria-invalid={invalid} />}
+      </Field>
+      <Field id="username" label={m.onboarding.username} hint={m.onboarding.usernameHint} optionalLabel={defaults.username ? undefined : m.common.optional} error={t(fe.username)}>
+        {(d, invalid) => (
+          <Input id="username" name="username" dir="ltr" autoComplete="username" minLength={3} maxLength={30}
+            pattern="[a-z0-9][a-z0-9._]{1,28}[a-z0-9]" defaultValue={defaults.username ?? ""} aria-describedby={d} aria-invalid={invalid} />
+        )}
       </Field>
       <Field id="headline" label={m.settings.headline} optionalLabel={m.common.optional} error={t(fe.headline, { max: 120 })}>
         {(d, invalid) => <Input id="headline" name="headline" maxLength={120} placeholder={m.settings.headlinePlaceholder} defaultValue={defaults.headline ?? ""} aria-describedby={d} aria-invalid={invalid} />}
@@ -168,7 +165,7 @@ export function AvatarForm({ locale, m, current }: { locale: string; m: AccountM
 export function PreferencesForm({ locale, m, defaults }: {
   locale: string;
   m: AccountMessages;
-  defaults: { preferredLocale: string; preferredCurrency: string; isClient: boolean; isFreelancer: boolean };
+  defaults: { preferredLocale: string; preferredCurrency: string; digitStyle: string; isClient: boolean; isFreelancer: boolean };
 }) {
   const [state, action] = useActionState(updatePreferencesAction, idleState);
   const t = useT(m);
@@ -197,6 +194,13 @@ export function PreferencesForm({ locale, m, defaults }: {
           )}
         </Field>
       </div>
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-semibold">{m.settings.digits}</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ChoiceCard type="radio" name="digitStyle" value="native" defaultChecked={defaults.digitStyle !== "latin"} title={m.settings.digitsNative} />
+          <ChoiceCard type="radio" name="digitStyle" value="latin" defaultChecked={defaults.digitStyle === "latin"} title={m.settings.digitsLatin} />
+        </div>
+      </fieldset>
       <SubmitButton pendingLabel={m.common.saving}>{m.common.save}</SubmitButton>
     </form>
   );

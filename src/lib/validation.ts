@@ -56,14 +56,13 @@ export const onboardingSchema = z
   .object({
     isClient: checkbox,
     isFreelancer: checkbox,
-    username: usernameSchema,
     city: z.enum([...CITY_KEYS, "other"]).optional().or(z.literal("").transform(() => undefined)),
-    preferredLocale: z.enum(locales),
   })
   .refine((v) => v.isClient || v.isFreelancer, { ...msg("validation.pickRole"), path: ["roles"] });
 
 export const profileSchema = z.object({
   displayName: trimmed.min(2, msg("validation.tooShort")).max(80, msg("validation.tooLong")),
+  username: z.literal("").transform(() => undefined).or(usernameSchema).optional(),
   headline: trimmed.max(120, msg("validation.tooLong")).optional().default(""),
   bio: trimmed.max(2000, msg("validation.tooLong")).optional().default(""),
   city: z.enum([...CITY_KEYS, "other"]).optional().or(z.literal("").transform(() => undefined)),
@@ -72,6 +71,7 @@ export const profileSchema = z.object({
 export const preferencesSchema = z.object({
   preferredLocale: z.enum(locales),
   preferredCurrency: z.enum(Object.keys(currencies) as [keyof typeof currencies, ...(keyof typeof currencies)[]]),
+  digitStyle: z.enum(["native", "latin"]),
   isClient: checkbox,
   isFreelancer: checkbox,
 });

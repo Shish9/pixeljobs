@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
-import { formatDate, formatNumber } from "@/i18n/format";
+import { getFormatters } from "@/i18n/format-server";
 import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Alert } from "@/components/ui/Alert";
@@ -14,7 +14,7 @@ export default async function AdminPage({ params }: PageProps<"/[lang]/admin">) 
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   await requireStaff(lang);
-  const dict = await getDictionary(lang);
+  const [dict, fmt] = await Promise.all([getDictionary(lang), getFormatters(lang)]);
   const a = dict.admin;
   const supabase = (await createClient())!;
 
@@ -48,7 +48,7 @@ export default async function AdminPage({ params }: PageProps<"/[lang]/admin">) 
           {metrics.map((mt) => (
             <Card key={mt.label} className="p-5">
               <dt className="text-sm text-ink-muted">{mt.label}</dt>
-              <dd className="mt-1 text-3xl font-extrabold">{formatNumber(mt.value, lang)}</dd>
+              <dd className="mt-1 text-3xl font-extrabold">{fmt.number(mt.value)}</dd>
             </Card>
           ))}
         </dl>
@@ -81,7 +81,7 @@ export default async function AdminPage({ params }: PageProps<"/[lang]/admin">) 
                   <td className="px-4 py-3">
                     <Badge tone={u.account_status === "active" ? "success" : "danger"}>{statusLabel[u.account_status]}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-ink-muted">{formatDate(u.created_at, lang)}</td>
+                  <td className="px-4 py-3 text-ink-muted">{fmt.date(u.created_at)}</td>
                 </tr>
               ))}
             </tbody>

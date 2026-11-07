@@ -2,8 +2,8 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 const control =
-  "block w-full rounded-md border border-line-strong bg-surface px-3 text-base text-ink placeholder:text-ink-subtle " +
-  "transition-colors hover:border-ink-subtle focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200 " +
+  "block w-full rounded-md border border-[#bdb4a3] bg-surface px-3 text-base text-ink placeholder:text-ink-subtle " +
+  "transition-colors hover:border-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/15 " +
   "aria-[invalid=true]:border-danger-700 aria-[invalid=true]:focus:ring-danger-50 disabled:bg-sunken";
 
 type FieldProps = {
@@ -70,7 +70,7 @@ export function ChoiceCard({
   type?: "checkbox" | "radio";
 }) {
   return (
-    <label className="flex cursor-pointer gap-3 rounded-lg border border-line-strong bg-surface p-4 transition-colors hover:border-ink-subtle has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-600">
+    <label className="flex cursor-pointer gap-3 rounded-md border border-[#bdb4a3] bg-surface p-4 transition-colors hover:border-ink has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ink">
       <input
         type={type}
         name={name}

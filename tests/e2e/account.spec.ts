@@ -32,18 +32,20 @@ test("sign in → onboarding → dashboard → settings → sign out", async ({ 
 
   await page.getByText("I want to hire").click();
   await page.getByText("I want to work").click();
-  await page.getByLabel("Username").fill(`e2e_${Date.now().toString(36)}`);
   await page.getByLabel("City").selectOption("erbil");
   await page.getByRole("button", { name: "Finish setup" }).click();
 
+  // No username needed to finish onboarding; the dashboard lists it as a next step.
   await expect(page).toHaveURL(/\/en\/dashboard\?mode=freelancer/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Welcome");
+  await expect(page.getByRole("heading", { name: "Next steps" })).toBeVisible();
+  await expect(page.getByText("Choose a username")).toBeVisible();
   await page.getByRole("link", { name: "Client" }).click();
   await expect(page).toHaveURL(/mode=client/);
-  await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
+  await expect(page.getByText(/Posting projects and requesting services/)).toBeVisible();
 
   // Settings: profile text + avatar + privacy.
   await page.goto("/en/settings");
+  await page.getByLabel("Username").fill(`e2e_${Date.now().toString(36)}`);
   await page.getByLabel("Headline").fill("Brand designer");
   await page.getByLabel("About you").fill("I design brand identities for businesses in Erbil and beyond.");
   await page.getByRole("button", { name: "Save changes" }).first().click();
@@ -59,6 +61,14 @@ test("sign in → onboarding → dashboard → settings → sign out", async ({ 
   await page.getByLabel("Profile photo").setInputFiles({ name: "x.png", mimeType: "image/png", buffer: Buffer.from("<svg onload=alert(1)>") });
   await page.getByRole("button", { name: "Upload photo" }).click();
   await expect(page.locator("#avatar-error")).toHaveText("Please upload a JPG, PNG or WebP image.");
+
+  // Digit style: switch to Western digits and see it applied on a Kurdish page.
+  await page.getByText("Western digits (123)").click();
+  await page.locator("section[aria-labelledby=preferences]").getByRole("button", { name: "Save changes" }).click();
+  await expect(page.locator("section[aria-labelledby=preferences]").getByRole("status")).toContainText("Saved");
+  await page.goto("/ckb/dashboard");
+  await expect(page.locator("#next-steps").locator("..").getByText(/[0-9]/).first()).toBeVisible();
+  await page.goto("/en/settings");
 
   await page.getByText("Private — only people I'm working with").click();
   await page.locator("section[aria-labelledby=privacy]").getByRole("button", { name: "Save changes" }).click();

@@ -151,10 +151,19 @@ begin
   ---------------------------------------------------------------------------
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
-  update public.profiles set username = 'new.user', is_freelancer = true where id = c;
+  update public.profiles set is_freelancer = true where id = c;
   if (select onboarded_at from public.profiles where id = c) is null then
-    raise exception 'RLS_TEST_FAILED: onboarding via own update did not set onboarded_at';
+    raise exception 'RLS_TEST_FAILED: choosing a mode (no username) did not complete onboarding';
   end if;
+  update public.profiles set username = 'new.user' where id = c;
+  update public.account_settings set digit_style = 'latin' where user_id = c;
+  if (select digit_style from public.account_settings where user_id = c) <> 'latin' then
+    raise exception 'RLS_TEST_FAILED: user cannot set own digit_style';
+  end if;
+  denied := false;
+  begin update public.account_settings set digit_style = 'roman' where user_id = c; exception when check_violation then denied := true; end;
+  if not denied then raise exception 'RLS_TEST_FAILED: invalid digit_style accepted'; end if;
+  checks := checks + 2;
   denied := false;
   begin update public.profiles set username = 'admin' where id = c; exception when check_violation then denied := true; end;
   if not denied then raise exception 'RLS_TEST_FAILED: reserved username accepted'; end if;

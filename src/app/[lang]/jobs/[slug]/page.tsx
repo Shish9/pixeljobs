@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
-import { formatDate } from "@/i18n/format";
+import { getFormatters } from "@/i18n/format-server";
 import { interpolate } from "@/i18n/translate";
 import { getJob } from "@/lib/jobs";
 import { htmlToBlocks, safeExternalUrl } from "@/lib/text";
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/jobs/[slug
 export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[slug]">) {
   const { lang, slug } = await params;
   if (!isLocale(lang)) notFound();
-  const [dict, job] = await Promise.all([getDictionary(lang), getJob(slug)]);
+  const [dict, job, fmt] = await Promise.all([getDictionary(lang), getJob(slug), getFormatters(lang)]);
   if (!job) notFound();
 
   const blocks = htmlToBlocks(job.job_description);
@@ -58,7 +58,7 @@ export default async function JobPage({ params }: PageProps<"/[lang]/jobs/[slug]
         </article>
         <aside>
           <Card className="sticky top-24 p-5">
-            <p className="text-sm text-ink-subtle">{interpolate(dict.jobs.posted, { date: formatDate(job.published_date, lang) })}</p>
+            <p className="text-sm text-ink-subtle">{interpolate(dict.jobs.posted, { date: fmt.date(job.published_date) })}</p>
             {applyUrl && (
               <a href={applyUrl} target="_blank" rel="noopener noreferrer nofollow" className={buttonClasses("primary", "md", "mt-4 w-full")}>
                 {dict.jobs.apply} <ExternalLink className="size-4" aria-hidden="true" />

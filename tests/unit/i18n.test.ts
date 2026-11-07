@@ -74,6 +74,12 @@ describe("formatting", () => {
   it("formats USD from cents", () => {
     expect(formatMoney(129950, "USD", "en")).toContain("1,299.5");
   });
+  it("honours the Western-digit preference", () => {
+    expect(formatNumber(1234, "ckb", {}, "latin")).toBe("1,234");
+    expect(formatMoney(150000, "IQD", "ar", "latin")).toContain("150,000");
+    expect(formatDate("2026-11-06T22:30:00Z", "ar", { dateStyle: "short" }, "latin")).toMatch(/\d/);
+    expect(formatNumber(1234, "ckb")).toBe("١٬٢٣٤");
+  });
   it("formats numbers and dates per locale (Baghdad time zone)", () => {
     expect(formatNumber(1234, "en")).toBe("1,234");
     expect(formatNumber(1234, "ar")).toBe("١٬٢٣٤");

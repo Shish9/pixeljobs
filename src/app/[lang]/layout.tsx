@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Plus_Jakarta_Sans, Vazirmatn } from "next/font/google";
+import { Noto_Naskh_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import "../globals.css";
 import { isLocale, localeMeta, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -15,10 +15,10 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-// Vazirmatn covers Arabic and Kurdish (ڕ ڵ ێ ۆ ە ڤ) glyphs that Plus Jakarta Sans lacks.
-const vazirmatn = Vazirmatn({
+// Noto Naskh Arabic covers Arabic and Kurdish (ڕ ڵ ێ ۆ ە ڤ) glyphs that Plus Jakarta Sans lacks.
+const naskh = Noto_Naskh_Arabic({
   subsets: ["arabic"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-arabic",
   display: "swap",
 });
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   };
 }
 
-export const viewport: Viewport = { themeColor: "#faf9f6", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#fbf9f4", width: "device-width", initialScale: 1 };
 
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[lang]">) {
   const { lang } = await params;
@@ -52,8 +52,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   const { dir, htmlLang } = localeMeta[lang];
 
   return (
-    <html lang={htmlLang} dir={dir} className={`${jakarta.variable} ${vazirmatn.variable}`}>
-      <body className="flex min-h-dvh flex-col">
+    <html lang={htmlLang} dir={dir} className={`${jakarta.variable} ${naskh.variable}`}>
+      <body className="flex min-h-dvh flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-white"

@@ -28,7 +28,6 @@ export default async function OnboardingPage({ params }: PageProps<"/[lang]/onbo
           locale={lang}
           m={pickAccountMessages(dict)}
           defaults={{
-            username: viewer.profile.username ?? "",
             city: viewer.profile.city,
             isClient: viewer.profile.is_client,
             isFreelancer: viewer.profile.is_freelancer,

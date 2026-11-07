@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { DIGIT_COOKIE } from "@/i18n/format";
 import type { ActionState } from "@/lib/action-state";
 import { getViewer } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -35,36 +37,26 @@ export async function completeOnboardingAction(_prev: ActionState, formData: For
   const ctx = await authed();
   if (!ctx) return { status: "error", message: "errors.forbidden" };
 
-  const raw = {
-    isClient: formData.get("isClient"),
-    isFreelancer: formData.get("isFreelancer"),
-    username: formData.get("username"),
-    city: formData.get("city") ?? "",
-    preferredLocale: formData.get("preferredLocale"),
-  };
-  const values = { username: String(raw.username ?? ""), city: String(raw.city ?? "") };
+  const locale = localeFrom(formData);
+  const raw = { isClient: formData.get("isClient"), isFreelancer: formData.get("isFreelancer"), city: formData.get("city") ?? "" };
+  const values = { city: String(raw.city ?? "") };
   const parsed = onboardingSchema.safeParse(raw);
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error), values };
 
+  // Choosing a mode completes onboarding (DB trigger). Username and the rest can wait for Settings.
   const { error } = await ctx.supabase
     .from("profiles")
     .update({
-      username: parsed.data.username,
       is_client: parsed.data.isClient,
       is_freelancer: parsed.data.isFreelancer,
       city: parsed.data.city ?? null,
-      preferred_locale: parsed.data.preferredLocale,
+      preferred_locale: locale,
     })
     .eq("id", ctx.viewer.user.id);
-
-  if (error) {
-    if (error.code === UNIQUE_VIOLATION) return { status: "error", fieldErrors: { username: "errors.usernameTaken" }, values };
-    if (error.code === "23514") return { status: "error", fieldErrors: { username: "validation.username" }, values };
-    return { status: "error", message: "errors.generic", values };
-  }
+  if (error) return { status: "error", message: "errors.generic", values };
 
   const mode = parsed.data.isFreelancer ? "freelancer" : "client";
-  redirect(`/${parsed.data.preferredLocale}/dashboard?mode=${mode}&welcome=1`);
+  redirect(`/${locale}/dashboard?mode=${mode}&welcome=1`);
 }
 
 export async function updateProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -72,6 +64,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   if (!ctx) return { status: "error", message: "errors.forbidden" };
   const parsed = profileSchema.safeParse({
     displayName: formData.get("displayName"),
+    username: formData.get("username") ?? "",
     headline: formData.get("headline") ?? "",
     bio: formData.get("bio") ?? "",
     city: formData.get("city") ?? "",
@@ -82,12 +75,17 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
     .from("profiles")
     .update({
       display_name: parsed.data.displayName,
+      ...(parsed.data.username ? { username: parsed.data.username } : {}),
       headline: parsed.data.headline || null,
       bio: parsed.data.bio || null,
       city: parsed.data.city ?? null,
     })
     .eq("id", ctx.viewer.user.id);
-  if (error) return { status: "error", message: "errors.generic" };
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) return { status: "error", fieldErrors: { username: "errors.usernameTaken" } };
+    if (error.code === "23514") return { status: "error", fieldErrors: { username: "validation.username" } };
+    return { status: "error", message: "errors.generic" };
+  }
 
   revalidatePath(`/${localeFrom(formData)}`, "layout");
   return { status: "success", message: "common.saved" };
@@ -101,6 +99,7 @@ export async function updatePreferencesAction(_prev: ActionState, formData: Form
     preferredCurrency: formData.get("preferredCurrency"),
     isClient: formData.get("isClient"),
     isFreelancer: formData.get("isFreelancer"),
+    digitStyle: formData.get("digitStyle") ?? "native",
   });
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error) };
   if (!parsed.data.isClient && !parsed.data.isFreelancer) {
@@ -117,6 +116,13 @@ export async function updatePreferencesAction(_prev: ActionState, formData: Form
     })
     .eq("id", ctx.viewer.user.id);
   if (error) return { status: "error", message: "errors.generic" };
+
+  const { error: settingsError } = await ctx.supabase
+    .from("account_settings")
+    .update({ digit_style: parsed.data.digitStyle })
+    .eq("user_id", ctx.viewer.user.id);
+  if (settingsError) return { status: "error", message: "errors.generic" };
+  (await cookies()).set(DIGIT_COOKIE, parsed.data.digitStyle, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
 
   const current = localeFrom(formData);
   if (parsed.data.preferredLocale !== current) redirect(`/${parsed.data.preferredLocale}/settings?saved=1`);

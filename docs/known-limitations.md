@@ -4,7 +4,11 @@
 - **Email delivery:** custom SMTP is not configured in Supabase yet → real users won't receive confirmation or reset
   emails. Blocking for public launch.
 - **Marketplace features** (services, projects, proposals, messaging, reviews, reports, moderation actions) are not
-  built yet; dashboard tiles say so explicitly.
+  built yet; the dashboard's "Coming next" list says so explicitly.
+- **Search** currently searches the read-only job board and says plainly that freelancer services open in the next
+  update. It will search services and projects once Phase 6 lands.
+- **Not yet built from the UX review:** guided request form and trust details on service pages (need Phase 6),
+  phone-number sign-in (needs an SMS provider — a cost decision), WhatsApp/SMS notifications, real photography.
 - **No payments.** Nothing in the app processes money or implies escrow/guarantees.
 - **Badini translation** needs native review; Badini dates/numbers use Sorani ICU data.
 - **Abuse controls** rely on Supabase Auth rate limits; there is no CAPTCHA yet (planned before opening sign-ups widely).

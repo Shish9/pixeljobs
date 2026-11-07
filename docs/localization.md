@@ -11,7 +11,15 @@
 - Dictionaries: `src/i18n/dictionaries/*.ts`. `en.ts` defines the `Dictionary` type, so a missing key in another
   language is a **type error**; a unit test also checks keys and `{placeholder}` parity.
 - Server Components load dictionaries with `getDictionary(locale)`; client forms receive only the sections they need.
-- Formatting: `formatMoney(amountMinor, currency, locale)`, `formatNumber`, `formatDate` (time zone `Asia/Baghdad`).
+- Formatting: server components use `getFormatters(locale)` (`src/i18n/format-server.ts`) → `fmt.number`, `fmt.date`,
+  `fmt.money`, which respect the visitor's **digit style**: Arabic-Indic (١٢٣, default for ar/ckb/kmr) or Western (123).
+  The choice lives in Settings → Preferences, is saved in `account_settings.digit_style`, and is mirrored in the
+  `pj_digits` cookie (restored on sign-in) so every page can read it. Time zone is always `Asia/Baghdad`.
+- **One language per screen.** Pages never mix languages in their UI copy; only the language menu lists languages in
+  their own scripts. User-generated content may be in any language (`dir="auto"`).
+- **Font:** Noto Naskh Arabic for Arabic and Kurdish (chosen in design review), Plus Jakarta Sans for Latin. Naskh reads
+  smaller than Latin, so RTL pages set the root size to 109.375% (all rem sizes scale: `text-sm` ≈ 15.3px,
+  `text-xs` ≈ 13.1px) and body line-height 1.85. Keep Kurdish/Arabic UI text at `text-sm` or larger.
 - RTL: `<html dir>` is set server-side. Use logical Tailwind utilities (`ms-*`, `pe-*`, `start-*`, `text-start`),
   `rtl:-scale-x-100` for directional icons, `dir="ltr"` on email/password/username inputs, and `.ltr-isolate` for
   Latin tokens in RTL text. User-generated text uses `dir="auto"`.

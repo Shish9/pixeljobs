@@ -2,24 +2,25 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-lg border border-line bg-surface shadow-card", className)} {...props} />;
+  return <div className={cn("rounded-md border border-line bg-surface", className)} {...props} />;
 }
 
 export function Badge({
   tone = "neutral",
   className,
   ...props
-}: ComponentProps<"span"> & { tone?: "neutral" | "brand" | "success" | "warning" | "danger" }) {
+}: ComponentProps<"span"> & { tone?: "neutral" | "brand" | "price" | "success" | "warning" | "danger" }) {
   const tones = {
     neutral: "bg-sunken text-ink-muted",
     brand: "bg-brand-50 text-brand-700",
+    price: "bg-accent-200 text-ink font-extrabold",
     success: "bg-success-50 text-success-700",
     warning: "bg-warning-50 text-warning-700",
     danger: "bg-danger-50 text-danger-700",
   } as const;
   return (
     <span
-      className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold", tones[tone], className)}
+      className={cn("inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-semibold", tones[tone], className)}
       {...props}
     />
   );
@@ -47,7 +48,7 @@ export function ProgressBar({ value, label }: { value: number; label: string }) 
 
 export function EmptyState({ title, body, action }: { title: string; body?: string; action?: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-line-strong bg-surface/60 px-6 py-10 text-center">
+    <div className="border-y border-ink px-6 py-10 text-center">
       <p className="font-semibold text-ink">{title}</p>
       {body && <p className="mx-auto mt-1 max-w-md text-sm text-ink-muted">{body}</p>}
       {action && <div className="mt-4">{action}</div>}

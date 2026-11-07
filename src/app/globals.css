@@ -1,30 +1,36 @@
 @import "tailwindcss";
 
 /*
- * PixelJobs design tokens.
- * Brand violet (#6C63FF) is kept from the original site. It is used for accents and large type only;
- * text, links and filled buttons use brand-600/700, which meet WCAG AA (≥4.5:1) on white and paper.
+ * PixelJobs design tokens — "second look".
+ * Zagros green = actions and links. Saffron = prices and highlights only. Warm paper + ink, thin rules,
+ * square-ish corners. All text/background pairs below meet WCAG AA (≥ 4.5:1).
+ * The `brand-*` scale is the green so existing components pick it up.
  */
 @theme {
-  --color-brand-50: #f4f3ff;
-  --color-brand-100: #ebe9ff;
-  --color-brand-200: #d6d3ff;
-  --color-brand-300: #b4aeff;
-  --color-brand-400: #8e86ff;
-  --color-brand-500: #6c63ff;
-  --color-brand-600: #5148e0;
-  --color-brand-700: #433bc0;
-  --color-brand-800: #36309a;
-  --color-brand-900: #272370;
+  --color-brand-50: #eef3f0;
+  --color-brand-100: #dce7e1;
+  --color-brand-200: #b9cfc3;
+  --color-brand-300: #8aae9b;
+  --color-brand-400: #4f8670;
+  --color-brand-500: #2e6b57;
+  --color-brand-600: #1f4d3f;
+  --color-brand-700: #163a2f;
+  --color-brand-800: #10291f;
+  --color-brand-900: #0a1a14;
 
-  --color-ink: #121212;
-  --color-ink-muted: #4a4a4a;
-  --color-ink-subtle: #666361;
-  --color-paper: #faf9f6;
+  --color-accent-100: #fbefd6;
+  --color-accent-200: #f6e3bc;
+  --color-accent-500: #e5a230;
+  --color-accent-800: #6a4510;
+
+  --color-ink: #161512;
+  --color-ink-muted: #3c3830;
+  --color-ink-subtle: #5a554b;
+  --color-paper: #fbf9f4;
   --color-surface: #ffffff;
-  --color-sunken: #f2f0eb;
-  --color-line: #e4e1da;
-  --color-line-strong: #cfcbc2;
+  --color-sunken: #f2eee6;
+  --color-line: #ddd6c8;
+  --color-line-strong: #161512;
 
   --color-success-50: #ecfdf3;
   --color-success-700: #0f6b3f;
@@ -32,19 +38,28 @@
   --color-warning-700: #7a4d00;
   --color-danger-50: #fef3f2;
   --color-danger-700: #b42318;
-  --color-info-50: #eff5ff;
-  --color-info-700: #1d4ed8;
+  --color-info-50: #eef3f0;
+  --color-info-700: #1f4d3f;
 
   --font-sans: var(--font-jakarta), var(--font-arabic), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
-  --font-arabic-first: var(--font-arabic), var(--font-jakarta), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-arabic-first: var(--font-arabic), var(--font-jakarta), ui-serif, serif;
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.625rem;
-  --radius-lg: 0.875rem;
-  --radius-xl: 1.25rem;
+  /* Square-ish corners: the look is ruled lines, not soft cards. */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
 
-  --shadow-card: 0 1px 2px rgb(18 18 18 / 0.04), 0 1px 1px rgb(18 18 18 / 0.03);
-  --shadow-raised: 0 10px 30px -12px rgb(18 18 18 / 0.18);
+  /* Type scale (the only sizes components should use) */
+  --text-display: 4.5rem;
+  --text-display--line-height: 1;
+  --text-h1: 2.5rem;
+  --text-h1--line-height: 1.1;
+  --text-h2: 1.75rem;
+  --text-h2--line-height: 1.2;
+
+  --shadow-card: none;
+  --shadow-raised: 0 24px 48px -20px rgb(22 21 18 / 0.35);
 }
 
 @layer base {
@@ -60,20 +75,31 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Arabic-script languages: Vazirmatn first, slightly taller line-height for diacritics. */
+  /*
+   * Arabic-script languages use Noto Naskh Arabic. Naskh reads smaller than Latin at the same size, so the
+   * root size goes up (every rem-based size scales with it: text-sm ≈ 15.3px, text-xs ≈ 13.1px) and lines
+   * get taller for diacritics.
+   */
+  html[dir="rtl"] {
+    font-size: 109.375%;
+  }
   html[dir="rtl"] body {
     font-family: var(--font-arabic-first);
-    line-height: 1.7;
+    line-height: 1.85;
+  }
+  html[dir="rtl"] :is(h1, h2, h3) {
+    line-height: 1.45;
+    letter-spacing: 0;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   ::selection {
-    background: var(--color-brand-200);
+    background: var(--color-accent-200);
   }
 
   /* Latin-only tokens (emails, usernames, URLs) inside RTL text. */

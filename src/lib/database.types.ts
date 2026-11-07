@@ -9,9 +9,9 @@ export type Database = {
   public: {
     Tables: {
       account_settings: {
-        Row: { marketing_emails: boolean; updated_at: string; user_id: string };
-        Insert: { marketing_emails?: boolean; updated_at?: string; user_id: string };
-        Update: { marketing_emails?: boolean; updated_at?: string; user_id?: string };
+        Row: { digit_style: string; marketing_emails: boolean; updated_at: string; user_id: string };
+        Insert: { digit_style?: string; marketing_emails?: boolean; updated_at?: string; user_id: string };
+        Update: { digit_style?: string; marketing_emails?: boolean; updated_at?: string; user_id?: string };
         Relationships: [];
       };
       currencies: {

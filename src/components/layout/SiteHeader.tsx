@@ -7,64 +7,73 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Logo } from "./Logo";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UserMenu } from "./UserMenu";
-import { MobileNav } from "./MobileNav";
+import { MobileTabBar } from "./MobileTabBar";
 
 export async function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const viewer = await getViewer();
   const nav = [
-    { href: `/${locale}#how-it-works`, label: dict.nav.howItWorks },
+    { href: `/${locale}/search`, label: dict.nav.search },
     { href: `/${locale}/jobs`, label: dict.nav.jobs },
   ];
-  const mobileLinks = viewer
-    ? [...nav, { href: `/${locale}/dashboard`, label: dict.nav.dashboard }, { href: `/${locale}/settings`, label: dict.nav.settings }]
-    : [...nav, { href: `/${locale}/sign-in`, label: dict.nav.signIn }, { href: `/${locale}/sign-up`, label: dict.nav.signUp }];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur supports-[backdrop-filter]:bg-paper/75">
-      <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <div className="flex items-center gap-8">
-          <Logo href={`/${locale}`} />
-          <nav aria-label={dict.nav.primary} className="hidden md:block">
-            <ul className="flex items-center gap-6 text-sm font-medium text-ink-muted">
-              {nav.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="rounded-sm hover:text-ink">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+    <>
+      <header className="sticky top-0 z-40 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 border-b border-ink px-4 sm:px-6">
+          <div className="flex items-center gap-8">
+            <Logo href={`/${locale}`} />
+            <nav aria-label={dict.nav.primary} className="hidden md:block">
+              <ul className="flex items-center gap-6 text-[0.95rem] text-ink">
+                {nav.map((l) => (
+                  <li key={l.href}>
+                    <Link href={l.href} className="rounded-sm underline-offset-[6px] hover:underline">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <LanguageSwitcher locale={locale} label={dict.common.language} />
+            {viewer ? (
+              <UserMenu
+                locale={locale}
+                name={viewer.profile.display_name || viewer.user.email || ""}
+                avatar={avatarUrl(viewer.profile.avatar_path)}
+                isStaff={viewer.isStaff}
+                labels={{
+                  account: dict.nav.account,
+                  dashboard: dict.nav.dashboard,
+                  settings: dict.nav.settings,
+                  admin: dict.nav.admin,
+                  signOut: dict.nav.signOut,
+                }}
+              />
+            ) : (
+              <>
+                <Link href={`/${locale}/sign-in`} className="hidden px-2 text-[0.95rem] underline-offset-[6px] hover:underline md:inline">
+                  {dict.nav.signIn}
+                </Link>
+                <ButtonLink href={`/${locale}/sign-up`} variant="dark" size="sm" className="max-w-44 truncate sm:max-w-none">
+                  {dict.nav.join}
+                </ButtonLink>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher locale={locale} label={dict.common.language} />
-          {viewer ? (
-            <UserMenu
-              locale={locale}
-              name={viewer.profile.display_name || viewer.user.email || ""}
-              avatar={avatarUrl(viewer.profile.avatar_path)}
-              isStaff={viewer.isStaff}
-              labels={{
-                account: dict.nav.account,
-                dashboard: dict.nav.dashboard,
-                settings: dict.nav.settings,
-                admin: dict.nav.admin,
-                signOut: dict.nav.signOut,
-              }}
-            />
-          ) : (
-            <div className="hidden items-center gap-2 md:flex">
-              <ButtonLink href={`/${locale}/sign-in`} variant="ghost" size="sm">
-                {dict.nav.signIn}
-              </ButtonLink>
-              <ButtonLink href={`/${locale}/sign-up`} variant="dark" size="sm">
-                {dict.nav.signUp}
-              </ButtonLink>
-            </div>
-          )}
-          <MobileNav label={dict.common.menu} closeLabel={dict.common.close} links={mobileLinks} />
-        </div>
-      </div>
-    </header>
+      </header>
+      <MobileTabBar
+        label={dict.nav.primary}
+        tabs={[
+          { href: `/${locale}`, label: dict.nav.home, icon: "home", exact: true },
+          { href: `/${locale}/search`, label: dict.nav.search, icon: "search" },
+          { href: `/${locale}/jobs`, label: dict.nav.jobs, icon: "jobs" },
+          viewer
+            ? { href: `/${locale}/dashboard`, label: dict.nav.dashboard, icon: "account" }
+            : { href: `/${locale}/sign-in`, label: dict.nav.signIn, icon: "account" },
+        ]}
+      />
+    </>
   );
 }
