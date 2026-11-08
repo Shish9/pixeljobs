@@ -15,6 +15,10 @@ import { Container } from "@/components/ui/Card";
 import { RequestForm } from "@/components/market/MarketForms";
 import { pickMarketMessages } from "@/components/market/messages";
 import { Person, SaveButton, StatusBadge, money, statusTone } from "@/components/market/parts";
+import { reviewsAbout, serviceRatings } from "@/lib/trust";
+import { RatingInline, ReviewList } from "@/components/trust/Rating";
+import { ReportButton } from "@/components/trust/TrustForms";
+import { pickTrustMessages } from "@/components/trust/messages";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/services/[id]">): Promise<Metadata> {
   const { lang, id } = await params;
@@ -32,7 +36,10 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/service
   const { service, packages, owner } = data;
   const m = dict.market;
   const isOwner = viewer?.user.id === service.owner_id;
-  const saved = (await savedSet(viewer?.user.id)).has(`service:${service.id}`);
+  const [savedIds, ratings, reviews] = await Promise.all([savedSet(viewer?.user.id), serviceRatings([service.id]), reviewsAbout({ service: service.id })]);
+  const saved = savedIds.has(`service:${service.id}`);
+  const rating = ratings.get(service.id);
+  const tm = viewer && !isOwner ? pickTrustMessages(dict) : undefined;
   const cover = mediaUrl(service.cover_path);
   const faqs = Array.isArray(service.faqs) ? (service.faqs as { q: string; a: string }[]) : [];
   const priceLabels = Object.fromEntries(packages.map((p) => [p.tier, money(fmt, p.price_minor, p.currency)]));
@@ -52,7 +59,7 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/service
           <div className="mt-5 flex flex-wrap items-center gap-4 border-y border-line py-4">
             <Person person={owner} fallback="?" />
             <div className="min-w-0 flex-1">
-              <p className="font-bold">{owner?.display_name ?? "—"}</p>
+              <p className="flex flex-wrap items-center gap-x-3 font-bold">{owner?.display_name ?? "—"} <RatingInline rating={rating} dict={dict} fmt={fmt} /></p>
               <p className="text-sm text-ink-subtle">
                 {[service.city && translate(dict, `cities.${service.city}`), service.languages.map((l) => translate(dict, `market.lang_${l}`)).join(", ")].filter(Boolean).join(" · ")}
               </p>
@@ -118,6 +125,15 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/service
               </dl>
             </section>
           )}
+
+          <section className="mt-10" aria-labelledby="reviews">
+            <h2 id="reviews" className="flex items-baseline justify-between border-b border-ink pb-2 text-xl font-extrabold">
+              <span>{dict.trust.reviewsTitle}</span>
+              <RatingInline rating={rating} dict={dict} fmt={fmt} />
+            </h2>
+            <div className="mt-2"><ReviewList reviews={reviews} dict={dict} fmt={fmt} locale={lang} reportM={tm} viewerId={viewer?.user.id} /></div>
+          </section>
+          {tm && <div className="mt-6"><ReportButton locale={lang} m={tm} targetType="service" targetId={service.id} /></div>}
         </article>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">

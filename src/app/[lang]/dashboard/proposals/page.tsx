@@ -8,6 +8,9 @@ import { interpolate, translate } from "@/i18n/translate";
 import { requireOnboardedViewer } from "@/lib/auth";
 import { updateProposalStatusAction } from "@/lib/actions/market";
 import { myProposals } from "@/lib/market";
+import { conversationLinks, myReviewedEngagements } from "@/lib/trust";
+import { ReviewForm } from "@/components/trust/TrustForms";
+import { pickTrustMessages } from "@/components/trust/messages";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/Card";
 import { DashShell } from "@/components/market/DashShell";
@@ -19,8 +22,16 @@ export default async function MyProposalsPage({ params }: PageProps<"/[lang]/das
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const viewer = await requireOnboardedViewer(lang, `/${lang}/dashboard/proposals`);
-  const [dict, fmt, rows] = await Promise.all([getDictionary(lang), getFormatters(lang), myProposals(viewer.user.id)]);
+  const [dict, fmt, rows, reviewed] = await Promise.all([
+    getDictionary(lang),
+    getFormatters(lang),
+    myProposals(viewer.user.id),
+    myReviewedEngagements(viewer.user.id),
+  ]);
+  const links = await conversationLinks("proposal", rows.map((r) => r.id));
   const m = dict.market;
+  const tr = dict.trust;
+  const tm = pickTrustMessages(dict);
   return (
     <DashShell locale={lang} dict={dict} viewer={viewer} current="/proposals" title={m.navProposals} requires="freelancer"
       action={<ButtonLink href={`/${lang}/projects`} variant="secondary">{m.browseProjects}</ButtonLink>}>
@@ -39,8 +50,16 @@ export default async function MyProposalsPage({ params }: PageProps<"/[lang]/das
                 </p>
               </div>
               <StatusBadge tone={statusTone(r.status)}>{translate(dict, `market.prstatus_${r.status}`)}</StatusBadge>
+              {links.get(r.id) && (
+                <Link href={`/${lang}/dashboard/messages/${links.get(r.id)}`} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4">{tr.message}</Link>
+              )}
               {(r.status === "submitted" || r.status === "shortlisted") && (
                 <StatusAction action={updateProposalStatusAction} locale={lang} id={r.id} status="withdrawn" label={m.pact_withdrawn} tone="danger" />
+              )}
+              {r.status === "accepted" && r.project?.status === "completed" && (
+                <div className="basis-full">
+                  {reviewed.has(r.id) ? <p className="text-sm text-ink-subtle"><span className="font-semibold text-ink">{tr.reviewed}.</span> {tr.blindNote}</p> : <ReviewForm locale={lang} m={tm} proposalId={r.id} otherName={tr.clientLabel} />}
+                </div>
               )}
             </li>
           ))}

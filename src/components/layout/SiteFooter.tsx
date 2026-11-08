@@ -29,9 +29,16 @@ export function SiteFooter({ locale, dict }: { locale: Locale; dict: Dictionary 
           </p>
         </div>
       </div>
-      <p className="border-t border-line py-4 text-sm text-ink-subtle">
-        {interpolate(dict.footer.rights, { year: new Date().getFullYear() })} · {dict.footer.built}
-      </p>
+      <div className="flex flex-col gap-3 border-t border-line py-4 text-sm text-ink-subtle sm:flex-row sm:items-center sm:justify-between">
+        <p>{interpolate(dict.footer.rights, { year: new Date().getFullYear() })} · {dict.footer.built}</p>
+        <nav aria-label={dict.trust.legalNav}>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1">
+            {(["guidelines", "terms", "privacy", "safety"] as const).map((k) => (
+              <li key={k}><Link className="inline-flex min-h-8 items-center hover:text-ink hover:underline" href={`/${locale}/${k}`}>{dict.trust[k]}</Link></li>
+            ))}
+          </ul>
+        </nav>
+      </div>
     </footer>
   );
 }

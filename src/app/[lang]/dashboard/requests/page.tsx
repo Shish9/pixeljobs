@@ -8,6 +8,9 @@ import { interpolate, translate } from "@/i18n/translate";
 import { requireOnboardedViewer } from "@/lib/auth";
 import { updateRequestStatusAction } from "@/lib/actions/market";
 import { requestsFor } from "@/lib/market";
+import { conversationLinks, myReviewedEngagements } from "@/lib/trust";
+import { ReviewForm } from "@/components/trust/TrustForms";
+import { pickTrustMessages } from "@/components/trust/messages";
 import { CLIENT_REQUEST_ACTIONS, FREELANCER_REQUEST_ACTIONS } from "@/lib/taxonomy";
 import { EmptyState } from "@/components/ui/Card";
 import { DashShell } from "@/components/market/DashShell";
@@ -21,8 +24,16 @@ export default async function RequestsPage({ params, searchParams }: PageProps<"
   const viewer = await requireOnboardedViewer(lang, `/${lang}/dashboard/requests`);
   const sp = await searchParams;
   const side: "received" | "sent" = sp.side === "sent" || !viewer.profile.is_freelancer ? "sent" : "received";
-  const [dict, fmt, rows] = await Promise.all([getDictionary(lang), getFormatters(lang), requestsFor(viewer.user.id, side)]);
+  const [dict, fmt, rows, reviewed] = await Promise.all([
+    getDictionary(lang),
+    getFormatters(lang),
+    requestsFor(viewer.user.id, side),
+    myReviewedEngagements(viewer.user.id),
+  ]);
+  const links = await conversationLinks("request", rows.map((r) => r.id));
   const m = dict.market;
+  const tr = dict.trust;
+  const tm = pickTrustMessages(dict);
   const tab = (key: "received" | "sent", label: string) => (
     <Link href={`/${lang}/dashboard/requests?side=${key}`} aria-current={side === key ? "page" : undefined}
       className={`inline-flex min-h-11 items-center border-b-[3px] px-1 ${side === key ? "border-brand-600 font-bold" : "border-transparent text-ink-subtle"}`}>{label}</Link>
@@ -52,9 +63,23 @@ export default async function RequestsPage({ params, searchParams }: PageProps<"
                     <span>· {fmt.date(r.created_at)}</span>
                   </div>
                   <p className="mt-3 whitespace-pre-line text-ink-muted" dir="auto">{r.message}</p>
+                  {r.status === "completed" && (
+                    <div className="mt-3">
+                      {reviewed.has(r.id) ? (
+                        <p className="text-sm text-ink-subtle"><span className="font-semibold text-ink">{tr.reviewed}.</span> {tr.blindNote}</p>
+                      ) : (
+                        <ReviewForm locale={lang} m={tm} requestId={r.id}
+                          otherName={r.other?.display_name || (side === "received" ? tr.clientLabel : tr.freelancerLabel)} />
+                      )}
+                    </div>
+                  )}
                 </div>
-                {actions.length > 0 && (
+                {(actions.length > 0 || links.get(r.id)) && (
                   <div className="flex flex-wrap items-start gap-2 md:justify-end">
+                    {links.get(r.id) && (
+                      <Link href={`/${lang}/dashboard/messages/${links.get(r.id)}`}
+                        className="inline-flex h-10 items-center rounded-md border border-ink px-3 text-sm font-semibold hover:bg-sunken">{tr.message}</Link>
+                    )}
                     {actions.map((a) => (
                       <StatusAction key={a} action={updateRequestStatusAction} locale={lang} id={r.id} status={a}
                         label={translate(dict, `market.ract_${a}`)} tone={a === "accepted" || a === "completed" ? "primary" : a === "cancelled" || a === "declined" ? "danger" : "secondary"} />

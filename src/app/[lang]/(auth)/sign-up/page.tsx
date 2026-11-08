@@ -23,6 +23,14 @@ export default async function SignUpPage({ params }: PageProps<"/[lang]/sign-up"
       footer={<>{dict.auth.haveAccount}{" "}<Link className="font-semibold text-brand-700 hover:underline" href={`/${lang}/sign-in`}>{dict.nav.signIn}</Link></>}
     >
       <SignUpForm locale={lang} m={pickAuthMessages(dict)} />
+      <p className="mt-4 text-sm text-ink-subtle">
+        {dict.trust.agreeLead}{" "}
+        <Link className="underline underline-offset-4 hover:text-ink" href={`/${lang}/terms`}>{dict.trust.terms}</Link>
+        {" · "}
+        <Link className="underline underline-offset-4 hover:text-ink" href={`/${lang}/guidelines`}>{dict.trust.guidelines}</Link>
+        {" · "}
+        <Link className="underline underline-offset-4 hover:text-ink" href={`/${lang}/privacy`}>{dict.trust.privacy}</Link>
+      </p>
     </AuthShell>
   );
 }

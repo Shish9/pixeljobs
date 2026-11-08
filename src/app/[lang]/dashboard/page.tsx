@@ -8,6 +8,7 @@ import { getFormatters } from "@/i18n/format-server";
 import { interpolate } from "@/i18n/translate";
 import { requireOnboardedViewer } from "@/lib/auth";
 import { dashboardCounts } from "@/lib/market";
+import { unreadCount } from "@/lib/trust";
 import { ButtonLink } from "@/components/ui/Button";
 import { DashboardNav } from "@/components/market/parts";
 import { Alert } from "@/components/ui/Alert";
@@ -23,7 +24,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const viewer = await requireOnboardedViewer(lang, `/${lang}/dashboard`);
-  const [dict, fmt, counts] = await Promise.all([getDictionary(lang), getFormatters(lang), dashboardCounts(viewer.user.id)]);
+  const [dict, fmt, counts, unread] = await Promise.all([getDictionary(lang), getFormatters(lang), dashboardCounts(viewer.user.id), unreadCount()]);
   const m = dict.market;
   const d = dict.dashboard;
   const sp = await searchParams;
@@ -68,7 +69,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps<
 
   return (
     <Container className="py-8 sm:py-12">
-      <DashboardNav locale={lang} dict={dict} current="" isFreelancer={p.is_freelancer} isClient={p.is_client} />
+      <DashboardNav locale={lang} dict={dict} current="" isFreelancer={p.is_freelancer} isClient={p.is_client} unread={unread} />
       <div className="mt-8 flex flex-col gap-4 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="text-h1 font-extrabold tracking-tight rtl:tracking-normal">
           {interpolate(d.welcome, { name: p.display_name || (p.username ? `@${p.username}` : "") }).replace(/[,،]\s*$/, "")}

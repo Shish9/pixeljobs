@@ -48,3 +48,7 @@ Trigger errors surface as short codes (`email_not_confirmed`, `service_needs_pac
 ```bash
 npx supabase gen types typescript --project-id qguhqutloktoxbkgjhty > src/lib/database.types.ts
 ```
+
+## Phase 7 tables (migrations `20261107215949_trust_and_safety`, `20261107220207_trust_and_safety_clock`)
+
+`conversations` (one per request or proposal, created by triggers), `messages` (insert `conversation_id, body` only), `conversation_reads`, `reviews` (+ views `review_stats`, `service_review_stats`), `reports` (with snapshot), `moderation_actions`, `private.hidden_message_bodies`. RPCs: `mark_conversation_read`, `unread_conversation_count`, `moderate`. Undo script: `supabase/rollbacks/20261107215949_trust_and_safety.down.sql` (destructive; backup first). Tests: `supabase/tests/rls_trust.sql`.

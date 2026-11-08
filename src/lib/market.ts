@@ -9,7 +9,7 @@ import { TIERS } from "@/lib/taxonomy";
  * Marketplace reads. Every query runs as the current user, so RLS decides what is visible.
  * Related rows are fetched in one batched query per table (no per-row queries).
  */
-type DB = SupabaseClient<Database>;
+export type DB = SupabaseClient<Database>;
 
 export type PublicPerson = Pick<Tables<"profiles">, "id" | "display_name" | "username" | "avatar_path" | "city" | "headline" | "languages">;
 const PERSON_COLUMNS = "id, display_name, username, avatar_path, city, headline, languages";
@@ -17,7 +17,13 @@ const PERSON_COLUMNS = "id, display_name, username, avatar_path, city, headline,
 export type ServiceCard = Pick<
   Tables<"services">,
   "id" | "title" | "category" | "city" | "languages" | "cover_path" | "published_at" | "status" | "owner_id"
-> & { owner: PublicPerson | null; fromPrice: number | null; currency: string; fastestDays: number | null };
+> & {
+  owner: PublicPerson | null;
+  fromPrice: number | null;
+  currency: string;
+  fastestDays: number | null;
+  rating: { count: number; avg: number } | null;
+};
 
 export type ProjectCard = Pick<
   Tables<"projects">,
@@ -25,24 +31,26 @@ export type ProjectCard = Pick<
   | "timeline" | "experience_level" | "status" | "published_at" | "created_at" | "client_id" | "description"
 > & { client: PublicPerson | null };
 
-async function db(): Promise<DB | null> {
+export async function db(): Promise<DB | null> {
   return createClient();
 }
 
-async function peopleById(supabase: DB, ids: string[]): Promise<Map<string, PublicPerson>> {
+export async function peopleById(supabase: DB, ids: string[]): Promise<Map<string, PublicPerson>> {
   const unique = [...new Set(ids)];
   if (unique.length === 0) return new Map();
   const { data } = await supabase.from("profiles").select(PERSON_COLUMNS).in("id", unique);
   return new Map((data ?? []).map((p) => [p.id, p as PublicPerson]));
 }
 
-async function decorateServices(supabase: DB, rows: Omit<ServiceCard, "owner" | "fromPrice" | "currency" | "fastestDays">[]) {
+async function decorateServices(supabase: DB, rows: Omit<ServiceCard, "owner" | "fromPrice" | "currency" | "fastestDays" | "rating">[]) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const [{ data: packages }, people] = await Promise.all([
+  const [{ data: packages }, people, { data: stats }] = await Promise.all([
     supabase.from("service_packages").select("service_id, price_minor, currency, delivery_days").in("service_id", ids),
     peopleById(supabase, rows.map((r) => r.owner_id)),
+    supabase.from("service_review_stats").select("*").in("service_id", ids),
   ]);
+  const ratings = new Map((stats ?? []).map((s) => [s.service_id, { count: s.review_count, avg: Number(s.rating_avg) }]));
   return rows.map((r): ServiceCard => {
     const own = (packages ?? []).filter((p) => p.service_id === r.id);
     const cheapest = own.reduce<(typeof own)[number] | null>((min, p) => (!min || p.price_minor < min.price_minor ? p : min), null);
@@ -52,6 +60,7 @@ async function decorateServices(supabase: DB, rows: Omit<ServiceCard, "owner" | 
       fromPrice: cheapest?.price_minor ?? null,
       currency: cheapest?.currency ?? "IQD",
       fastestDays: own.length ? Math.min(...own.map((p) => p.delivery_days)) : null,
+      rating: ratings.get(r.id) ?? null,
     };
   });
 }

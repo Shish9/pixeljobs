@@ -259,3 +259,39 @@ export const proposalSchema = z.object({
 });
 
 export const MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Trust & safety (Phase 7)
+// ---------------------------------------------------------------------------------------------------------------
+export const REPORT_TARGETS = ["user", "service", "project", "portfolio", "message", "review"] as const;
+export const REPORT_REASONS = ["spam", "scam", "offensive", "inappropriate", "fake", "other"] as const;
+/** Moderation actions per target type; mirrors the CASE in public.moderate(). */
+export const MODERATION_ACTIONS = {
+  user: ["suspend", "reinstate"],
+  service: ["suspend", "restore"],
+  portfolio: ["suspend", "restore"],
+  project: ["suspend", "restore"],
+  review: ["hide", "restore"],
+  message: ["hide", "restore"],
+} as const;
+
+export const messageSchema = z.object({
+  conversationId: z.uuid(),
+  body: trimmed.min(1, msg("validation.required")).max(4000, msg("validation.tooLong")),
+});
+
+export const reviewSchema = z
+  .object({
+    requestId: z.uuid().optional(),
+    proposalId: z.uuid().optional(),
+    rating: z.coerce.number().int().min(1, msg("validation.rating")).max(5, msg("validation.rating")),
+    body: z.union([z.literal(""), trimmed.min(10, msg("validation.tooShort")).max(2000, msg("validation.tooLong"))]),
+  })
+  .refine((v) => Boolean(v.requestId) !== Boolean(v.proposalId), { ...msg("validation.required"), path: ["rating"] });
+
+export const reportSchema = z.object({
+  targetType: z.enum(REPORT_TARGETS),
+  targetId: z.uuid(),
+  reason: z.enum(REPORT_REASONS, { error: () => "validation.pickReason" }),
+  details: optionalText(1000),
+});

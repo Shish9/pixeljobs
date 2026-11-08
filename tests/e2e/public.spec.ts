@@ -53,7 +53,7 @@ test.describe("marketplace browse", () => {
 });
 
 test.describe("access control", () => {
-  for (const path of ["dashboard", "settings", "onboarding", "admin", "dashboard/services/new", "dashboard/projects"]) {
+  for (const path of ["dashboard", "settings", "onboarding", "admin", "dashboard/services/new", "dashboard/projects", "dashboard/messages", "admin/reports"]) {
     test(`/${path} requires sign-in`, async ({ page }) => {
       await page.goto(`/en/${path}`);
       await expect(page).toHaveURL(new RegExp(`/en/sign-in\\?next=%2Fen%2F${path.replaceAll("/", "%2F")}`));
@@ -132,8 +132,29 @@ test.describe("forms", () => {
   });
 });
 
+test.describe("policies", () => {
+  for (const l of LOCALES) {
+    test(`policy pages render in ${l.code} with the draft notice`, async ({ page }) => {
+      for (const path of ["guidelines", "terms", "privacy", "safety"]) {
+        const res = await page.goto(`/${l.code}/${path}`);
+        expect(res?.status()).toBe(200);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        await expect(page.getByRole("status").first()).toBeVisible();
+      }
+    });
+  }
+
+  test("footer links to the policies and the sign-up page mentions the terms", async ({ page }) => {
+    await page.goto("/en/sign-up");
+    await expect(page.getByRole("main").getByRole("link", { name: "Terms of use" })).toBeVisible();
+    await page.getByRole("contentinfo").getByRole("link", { name: "Safety tips" }).click();
+    await expect(page).toHaveURL(/\/en\/safety$/);
+    await expect(page.getByText("PixelJobs does not hold payments or offer escrow yet.", { exact: false })).toBeVisible();
+  });
+});
+
 test.describe("layout", () => {
-  for (const path of ["/en", "/ckb", "/kmr", "/ar", "/en/sign-up", "/ar/jobs", "/kmr/search?q=logo&city=duhok", "/kmr/services", "/ar/projects"]) {
+  for (const path of ["/en", "/ckb", "/kmr", "/ar", "/en/sign-up", "/ar/jobs", "/kmr/search?q=logo&city=duhok", "/kmr/services", "/ar/projects", "/ckb/terms", "/kmr/safety"]) {
     test(`no horizontal overflow on ${path}`, async ({ page }) => {
       await page.goto(path);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -143,7 +164,7 @@ test.describe("layout", () => {
 });
 
 test.describe("accessibility (axe, WCAG 2.1 AA)", () => {
-  for (const path of ["/en", "/ckb", "/ar/sign-in", "/en/sign-up", "/kmr/forgot-password", "/en/jobs", "/ar/search?q=logo&city=erbil", "/en/services", "/ckb/projects"]) {
+  for (const path of ["/en", "/ckb", "/ar/sign-in", "/en/sign-up", "/kmr/forgot-password", "/en/jobs", "/ar/search?q=logo&city=erbil", "/en/services", "/ckb/projects", "/en/guidelines", "/ar/privacy"]) {
     test(`no serious violations on ${path}`, async ({ page }) => {
       await page.goto(path);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

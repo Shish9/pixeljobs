@@ -14,6 +14,10 @@ import { Container } from "@/components/ui/Card";
 import { ProposalForm } from "@/components/market/MarketForms";
 import { pickMarketMessages } from "@/components/market/messages";
 import { Person, SaveButton, StatusBadge, budgetLabel, statusTone } from "@/components/market/parts";
+import { conversationLinks, ratingsFor } from "@/lib/trust";
+import { RatingInline } from "@/components/trust/Rating";
+import { ReportButton } from "@/components/trust/TrustForms";
+import { pickTrustMessages } from "@/components/trust/messages";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/projects/[id]">): Promise<Metadata> {
   const { lang, id } = await params;
@@ -34,6 +38,10 @@ export default async function ProjectPage({ params }: PageProps<"/[lang]/project
   const [mine, portfolio, saved] = viewer && !isOwner
     ? await Promise.all([myProposalFor(viewer.user.id, project.id), myPortfolio(viewer.user.id), savedSet(viewer.user.id)])
     : [null, [], new Set<string>()];
+
+  const [ratings, links] = await Promise.all([ratingsFor([project.client_id]), conversationLinks("proposal", mine ? [mine.id] : [])]);
+  const thread = mine ? links.get(mine.id) : undefined;
+  const tm = viewer && !isOwner ? pickTrustMessages(dict) : undefined;
 
   const facts: [string, string][] = [
     [m.fBudgetType, translate(dict, `market.budget_${project.budget_type}`)],
@@ -58,6 +66,7 @@ export default async function ProjectPage({ params }: PageProps<"/[lang]/project
         <p className="mt-2 flex flex-wrap items-center gap-3">
           <StatusBadge tone={statusTone(mine.status)}>{translate(dict, `market.prstatus_${mine.status}`)}</StatusBadge>
           <Link href={`/${lang}/dashboard/proposals`}>{m.navProposals}</Link>
+          {thread && <Link href={`/${lang}/dashboard/messages/${thread}`}>{dict.trust.message}</Link>}
         </p>
       </Alert>
     );
@@ -108,10 +117,12 @@ export default async function ProjectPage({ params }: PageProps<"/[lang]/project
           <div className="mt-8 flex items-center gap-3 border-t border-line pt-5">
             <Person person={client} fallback={m.aClient} size="sm" />
             <span className="text-sm text-ink-subtle">{client?.display_name || m.aClient}</span>
+            <RatingInline rating={ratings.get(project.client_id)} dict={dict} fmt={fmt} />
             {viewer && !isOwner && (
               <span className="ms-auto"><SaveButton locale={lang} itemType="project" itemId={project.id} saved={saved.has(`project:${project.id}`)} label={m.save} savedLabel={m.unsave} /></span>
             )}
           </div>
+          {tm && <div className="mt-4"><ReportButton locale={lang} m={tm} targetType="project" targetId={project.id} /></div>}
         </article>
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-md border border-ink bg-surface p-5">{panel}</div>

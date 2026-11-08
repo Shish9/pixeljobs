@@ -11,6 +11,10 @@ import { mediaUrl } from "@/lib/taxonomy";
 import { safeExternalUrl } from "@/lib/text";
 import { Container } from "@/components/ui/Card";
 import { Person, SaveButton, ServiceTile, StatusBadge, money } from "@/components/market/parts";
+import { ratingsFor, reviewsAbout } from "@/lib/trust";
+import { RatingInline, ReviewList } from "@/components/trust/Rating";
+import { ReportButton } from "@/components/trust/TrustForms";
+import { pickTrustMessages } from "@/components/trust/messages";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/u/[username]">): Promise<Metadata> {
   const { lang, username } = await params;
@@ -28,7 +32,9 @@ export default async function ProfilePage({ params }: PageProps<"/[lang]/u/[user
   const { profile: p, entries, portfolio, services } = data;
   const m = dict.market;
   const isSelf = viewer?.user.id === p.id;
-  const saved = (await savedSet(viewer?.user.id)).has(`freelancer:${p.id}`);
+  const [savedIds, ratings, reviews] = await Promise.all([savedSet(viewer?.user.id), ratingsFor([p.id]), reviewsAbout({ reviewee: p.id })]);
+  const saved = savedIds.has(`freelancer:${p.id}`);
+  const tm = viewer && !isSelf ? pickTrustMessages(dict) : undefined;
   const website = safeExternalUrl(p.website_url);
   const groups = [
     { kind: "experience", title: m.experienceTitle },
@@ -47,6 +53,7 @@ export default async function ProfilePage({ params }: PageProps<"/[lang]/u/[user
           {p.headline && <p className="mt-1 text-xl text-ink-muted">{p.headline}</p>}
           <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-subtle">
             <span className="ltr-isolate">@{p.username}</span>
+            <RatingInline rating={ratings.get(p.id)} dict={dict} fmt={fmt} showEmpty />
             {p.city && <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" aria-hidden="true" />{translate(dict, `cities.${p.city}`)}</span>}
             {p.is_freelancer && <StatusBadge tone={p.availability === "available" ? "green" : "amber"}>{translate(dict, `market.avail_${p.availability}`)}</StatusBadge>}
             {p.rate_minor && <span className="bg-accent-200 px-1.5 font-bold text-ink">{interpolate(m.rateFrom, { price: money(fmt, p.rate_minor, p.rate_currency) })}</span>}
@@ -56,6 +63,7 @@ export default async function ProfilePage({ params }: PageProps<"/[lang]/u/[user
         <div className="flex gap-3">
           {website && <a href={website} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-2 rounded-md border border-ink px-3 text-sm font-semibold hover:bg-sunken">{m.fLink}<ExternalLink className="size-4" aria-hidden="true" /></a>}
           {viewer && !isSelf && <SaveButton locale={lang} itemType="freelancer" itemId={p.id} saved={saved} label={m.save} savedLabel={m.unsave} />}
+          {tm && <ReportButton locale={lang} m={tm} targetType="user" targetId={p.id} />}
         </div>
       </header>
 
@@ -91,11 +99,20 @@ export default async function ProfilePage({ params }: PageProps<"/[lang]/u/[user
                       {item.description && <p className="mt-1 text-ink-muted">{item.description}</p>}
                       {item.outcome && <p className="mt-2 text-sm font-semibold text-brand-700">{item.outcome}</p>}
                       {link && <a className="mt-2 inline-flex items-center gap-1 text-sm underline underline-offset-4" href={link} target="_blank" rel="noopener noreferrer nofollow">{m.fLink}<ExternalLink className="size-3.5" aria-hidden="true" /></a>}
+                      {tm && <ReportButton locale={lang} m={tm} targetType="portfolio" targetId={item.id} compact />}
                     </li>
                   );
                 })}
               </ul>
             )}
+          </section>
+
+          <section aria-labelledby="rv">
+            <h2 id="rv" className="flex items-baseline justify-between border-b border-ink pb-2 text-xl font-extrabold">
+              <span>{dict.trust.reviewsTitle}</span>
+              <RatingInline rating={ratings.get(p.id)} dict={dict} fmt={fmt} />
+            </h2>
+            <div className="mt-2"><ReviewList reviews={reviews} dict={dict} fmt={fmt} locale={lang} reportM={tm} viewerId={viewer?.user.id} /></div>
           </section>
         </div>
 

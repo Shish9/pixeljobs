@@ -25,3 +25,14 @@
 - No Content-Security-Policy header yet; no dark mode.
 - The old `pixeljobs-site` repo is untouched and still references the old `/api/send/*` email routes, which are open
   relays — do not redeploy it as-is.
+
+## Phase 7 (trust & safety)
+
+- **Legal and safety pages are drafts** (`src/content/legal/*`), marked as such on every page. A lawyer licensed in Iraq / the Kurdistan Region must review them, and the Badini text needs a native reviewer, before launch.
+- **No payments or escrow**: messages, terms and safety tips say so explicitly. Reviews are not tied to verified payments.
+- **Messaging is polled** (page refresh every 10–30 s while the tab is visible), not real-time; there are no email or push notifications, and no attachments.
+- **Moderators cannot read conversations by design.** They see only a copy of a message when someone reports it; unreported abuse in private threads is not visible to staff.
+- **Reviews cannot be edited or deleted by their authors**; only staff can hide one. There is no appeal flow yet beyond contacting us.
+- **No automated spam/abuse detection** beyond daily rate limits (300 messages, 20 reports per user per day).
+- Staff roles are granted in the database (`user_roles`); there is no UI for that yet.
+- Deleting an account with open requests/reviews is still blocked by existing foreign keys; test cleanup deletes them first.

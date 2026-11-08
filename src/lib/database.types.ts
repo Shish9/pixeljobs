@@ -1,4 +1,4 @@
-// Mirrors the live Supabase schema (project qguhqutloktoxbkgjhty) as of migration 20261107212122_marketplace_core.
+// Mirrors the live Supabase schema (project qguhqutloktoxbkgjhty) as of migration 20261107220207_trust_and_safety_clock.
 // Regenerate after every migration: `npx supabase gen types typescript --project-id <ref>` and keep these shapes in sync.
 // Insert/Update types are narrowed to the columns API roles may actually write (see GRANTs in the migrations).
 
@@ -13,6 +13,62 @@ export type Tier = "basic" | "standard" | "premium";
 export type ProjectStatus = "draft" | "open" | "in_review" | "assigned" | "in_progress" | "completed" | "cancelled" | "closed";
 export type ProposalStatus = "submitted" | "shortlisted" | "accepted" | "rejected" | "withdrawn" | "archived";
 export type RequestStatus = "pending" | "accepted" | "declined" | "cancelled" | "completed";
+export type ReportTarget = "user" | "service" | "project" | "portfolio" | "message" | "review";
+export type ReportReason = "spam" | "scam" | "offensive" | "inappropriate" | "fake" | "other";
+export type ReportStatus = "open" | "reviewing" | "actioned" | "dismissed";
+
+type ConversationRow = {
+  id: string;
+  request_id: string | null;
+  proposal_id: string | null;
+  client_id: string;
+  freelancer_id: string;
+  last_message_at: string | null;
+  last_message_preview: string;
+  last_sender_id: string | null;
+  created_at: string;
+};
+type MessageRow = { id: string; conversation_id: string; sender_id: string; body: string; hidden_at: string | null; created_at: string };
+type ReviewRow = {
+  id: string;
+  request_id: string | null;
+  proposal_id: string | null;
+  service_id: string | null;
+  reviewer_id: string;
+  reviewee_id: string;
+  reviewer_role: "client" | "freelancer";
+  rating: number;
+  body: string | null;
+  status: "published" | "hidden";
+  visible_at: string;
+  created_at: string;
+};
+type ReportRow = {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTarget;
+  target_id: string;
+  target_owner: string | null;
+  reason: ReportReason;
+  details: string | null;
+  snapshot: string | null;
+  status: ReportStatus;
+  resolution_note: string | null;
+  handled_by: string | null;
+  handled_at: string | null;
+  created_at: string;
+};
+type ModerationActionRow = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string;
+  report_id: string | null;
+  note: string | null;
+  created_at: string;
+};
+type StatsRow = { review_count: number; rating_avg: number };
 
 type ProfileRow = {
   account_status: "active" | "suspended" | "deactivated";
@@ -131,13 +187,29 @@ export type Database = {
         { created_at: string; item_id: string; item_type: string; user_id: string },
         { item_type: string; item_id: string }
       >;
+      conversations: Table<ConversationRow>;
+      messages: Table<MessageRow, { conversation_id: string; body: string }>;
+      conversation_reads: Table<{ conversation_id: string; user_id: string; last_read_at: string }>;
+      reviews: Table<ReviewRow, { request_id?: string | null; proposal_id?: string | null; rating: number; body?: string | null }>;
+      reports: Table<ReportRow, { target_type: ReportTarget; target_id: string; reason: ReportReason; details?: string | null }>;
+      moderation_actions: Table<ModerationActionRow>;
       user_roles: Table<
         { created_at: string; granted_by: string | null; role: "admin" | "moderator"; user_id: string },
         { role: "admin" | "moderator"; user_id: string; granted_by?: string | null }
       >;
     };
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Views: {
+      review_stats: { Row: StatsRow & { reviewee_id: string }; Relationships: Rel[] };
+      service_review_stats: { Row: StatsRow & { service_id: string }; Relationships: Rel[] };
+    };
+    Functions: {
+      mark_conversation_read: { Args: { p_conversation: string }; Returns: undefined };
+      unread_conversation_count: { Args: Record<string, never>; Returns: number };
+      moderate: {
+        Args: { p_target_type: string; p_target_id: string; p_action: string; p_note?: string | null; p_report_id?: string | null };
+        Returns: undefined;
+      };
+    };
     Enums: {
       account_status: "active" | "suspended" | "deactivated";
       app_role: "admin" | "moderator";

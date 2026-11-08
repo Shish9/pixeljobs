@@ -19,6 +19,14 @@ const CODES: Record<string, string> = {
   own_project: "errors.forbidden",
   not_freelancer: "errors.forbidden",
   invalid_portfolio: "errors.forbidden",
+  not_participant: "errors.forbidden",
+  conversation_closed: "trust.threadClosed",
+  awaiting_client: "trust.awaitingClient",
+  not_completed: "trust.notCompleted",
+  not_found: "errors.notAvailable",
+  own_content: "errors.forbidden",
+  target_protected: "errors.forbidden",
+  unknown_action: "errors.generic",
 };
 
 export function dbErrorKey(error: PostgrestError | null | undefined): string {

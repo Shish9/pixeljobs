@@ -9,6 +9,9 @@ import { interpolate, translate } from "@/i18n/translate";
 import { requireOnboardedViewer } from "@/lib/auth";
 import { deleteProjectAction, setProjectStatusAction, updateProposalStatusAction } from "@/lib/actions/market";
 import { getProject, proposalsForProject } from "@/lib/market";
+import { conversationLinks, myReviewedEngagements } from "@/lib/trust";
+import { ReportButton, ReviewForm } from "@/components/trust/TrustForms";
+import { pickTrustMessages } from "@/components/trust/messages";
 import { CLIENT_PROPOSAL_ACTIONS, PROJECT_TRANSITIONS, type ProjectStatus } from "@/lib/taxonomy";
 import { safeExternalUrl } from "@/lib/text";
 import { Alert } from "@/components/ui/Alert";
@@ -27,7 +30,10 @@ export default async function ManageProjectPage({ params, searchParams }: PagePr
   if (!data || data.project.client_id !== viewer.user.id) notFound();
   const { project } = data;
   const proposals = await proposalsForProject(project.id);
+  const [links, reviewed] = await Promise.all([conversationLinks("proposal", proposals.map((p) => p.id)), myReviewedEngagements(viewer.user.id)]);
   const m = dict.market;
+  const tr = dict.trust;
+  const tm = pickTrustMessages(dict);
   const transitions = PROJECT_TRANSITIONS[project.status as ProjectStatus];
   const visible = proposals.filter((p) => p.status !== "withdrawn");
 
@@ -92,12 +98,24 @@ export default async function ManageProjectPage({ params, searchParams }: PagePr
                         })}
                       </ul>
                     )}
+                    {p.status === "accepted" && project.status === "completed" && (
+                      <div className="mt-3">
+                        {reviewed.has(p.id) ? <p className="text-sm text-ink-subtle"><span className="font-semibold text-ink">{tr.reviewed}.</span> {tr.blindNote}</p> : (
+                          <ReviewForm locale={lang} m={tm} proposalId={p.id} otherName={p.freelancer?.display_name || tr.freelancerLabel} />
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-start gap-2 md:max-w-56 md:justify-end">
+                    {links.get(p.id) && (
+                      <Link href={`/${lang}/dashboard/messages/${links.get(p.id)}`}
+                        className="inline-flex h-10 items-center rounded-md border border-ink px-3 text-sm font-semibold hover:bg-sunken">{tr.message}</Link>
+                    )}
                     {CLIENT_PROPOSAL_ACTIONS[p.status].map((a) => (
                       <StatusAction key={a} action={updateProposalStatusAction} locale={lang} id={p.id} status={a}
                         label={translate(dict, `market.pact_${a}`)} tone={a === "accepted" ? "primary" : a === "rejected" ? "danger" : "secondary"} />
                     ))}
+                    <ReportButton locale={lang} m={tm} targetType="user" targetId={p.freelancer_id} compact />
                   </div>
                 </li>
               ))}

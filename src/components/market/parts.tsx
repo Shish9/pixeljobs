@@ -10,7 +10,7 @@ import { mediaUrl } from "@/lib/taxonomy";
 import { avatarUrl } from "@/lib/profile";
 import { cn } from "@/lib/cn";
 
-type Fmt = { number: (n: number) => string; date: (d: string) => string; money: (n: number, c: "IQD" | "USD") => string };
+type Fmt = { number: (n: number, o?: Intl.NumberFormatOptions) => string; date: (d: string) => string; money: (n: number, c: "IQD" | "USD") => string };
 
 export function money(fmt: Fmt, amount: number, currency: string) {
   return fmt.money(amount, currency === "USD" ? "USD" : "IQD");
@@ -83,6 +83,16 @@ export function ServiceTile({ service, locale, dict, fmt }: { service: ServiceCa
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {service.fromPrice !== null && (
           <span className="bg-accent-200 px-1.5 py-0.5 font-extrabold">{interpolate(m.from, { price: money(fmt, service.fromPrice, service.currency) })}</span>
+        )}
+        {service.rating && service.rating.count > 0 && (
+          <span className="inline-flex items-center gap-1">
+            <span aria-hidden="true" className="text-accent-600">★</span>
+            <span aria-hidden="true" className="font-bold">{fmt.number(service.rating.avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+            <span aria-hidden="true" className="text-ink-subtle">({fmt.number(service.rating.count)})</span>
+            <span className="sr-only">
+              {interpolate(dict.trust.ratingOutOf, { avg: fmt.number(service.rating.avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}
+            </span>
+          </span>
         )}
         {service.fastestDays !== null && (
           <span className="inline-flex items-center gap-1 text-ink-subtle">
@@ -215,16 +225,19 @@ export function DashboardNav({
   current,
   isFreelancer,
   isClient,
+  unread = 0,
 }: {
   locale: Locale;
   dict: Dictionary;
   current: string;
   isFreelancer: boolean;
   isClient: boolean;
+  unread?: number;
 }) {
   const m = dict.market;
   const links = [
     { href: "", label: m.navOverview, show: true },
+    { href: "/messages", label: dict.trust.navMessages, show: true, badge: unread },
     { href: "/requests", label: m.navRequests, show: true },
     { href: "/services", label: m.navServices, show: isFreelancer },
     { href: "/proposals", label: m.navProposals, show: isFreelancer },
@@ -249,6 +262,12 @@ export function DashboardNav({
                 )}
               >
                 {l.label}
+                {"badge" in l && l.badge ? (
+                  <span className="ms-1.5 inline-grid min-w-5 place-items-center rounded-full bg-brand-600 px-1.5 text-xs leading-5 font-bold text-white">
+                    <span aria-hidden="true">{l.badge}</span>
+                    <span className="sr-only">{interpolate(dict.trust.unreadCount, { count: l.badge })}</span>
+                  </span>
+                ) : null}
               </Link>
             </li>
           );
